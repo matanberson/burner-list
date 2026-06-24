@@ -1,0 +1,1707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Burner List</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍳</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #e8e0d4;
+      --paper: #fffdf7;
+      --border: #e8e2d9;
+      --border-strong: #d6d0c6;
+      --text-dark: #3a3530;
+      --text-mid: #6b6258;
+      --text-soft: #c0afa7;
+      --text-faint: #b5ad9f;
+      --text-faintest: #c5b9b0;
+      --hover-tint: rgba(180,165,140,0.08);
+      --hover-tint-strong: rgba(180,165,140,0.18);
+    }
+
+    body[data-theme="sage"] {
+      --bg: #dde4d8;
+      --paper: #fbfcf8;
+      --border: #e2e8dd;
+      --border-strong: #c9d3c2;
+      --text-dark: #333a2f;
+      --text-mid: #5d6b54;
+      --text-soft: #8a9580;
+      --text-faint: #a8b29e;
+      --text-faintest: #bcc6b3;
+      --hover-tint: rgba(140,165,120,0.08);
+      --hover-tint-strong: rgba(140,165,120,0.18);
+    }
+
+    body[data-theme="slate"] {
+      --bg: #dde3e6;
+      --paper: #f8fafb;
+      --border: #e1e7ea;
+      --border-strong: #c3ced3;
+      --text-dark: #2f3a3e;
+      --text-mid: #54676d;
+      --text-soft: #80949a;
+      --text-faint: #9eb0b5;
+      --text-faintest: #b3c2c6;
+      --hover-tint: rgba(120,150,160,0.08);
+      --hover-tint-strong: rgba(120,150,160,0.18);
+    }
+
+    body[data-theme="clay"] {
+      --bg: #ead9d0;
+      --paper: #fdf8f5;
+      --border: #ece0d8;
+      --border-strong: #d9c4b6;
+      --text-dark: #3e2f28;
+      --text-mid: #6e564a;
+      --text-soft: #9c8276;
+      --text-faint: #b59c8e;
+      --text-faintest: #c8b1a4;
+      --hover-tint: rgba(180,140,120,0.08);
+      --hover-tint-strong: rgba(180,140,120,0.18);
+    }
+
+    body[data-theme="lavender"] {
+      --bg: #e2dde8;
+      --paper: #faf8fc;
+      --border: #e6e1ec;
+      --border-strong: #cfc5d8;
+      --text-dark: #352f3c;
+      --text-mid: #61566d;
+      --text-soft: #8c8198;
+      --text-faint: #a89db3;
+      --text-faintest: #bcb0c6;
+      --hover-tint: rgba(150,130,170,0.08);
+      --hover-tint-strong: rgba(150,130,170,0.18);
+    }
+
+    body {
+      font-family: Inter, sans-serif;
+      background: var(--paper);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 70px 20px 40px;
+      transition: background 0.4s;
+    }
+
+    body.reschedule-mode { background: #e8d4d4; }
+
+    /* Top bar: hamburger + title + date in one line */
+    .top-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 120;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 40px;
+      background: var(--paper);
+      transition: background 0.4s;
+    }
+
+    .hamburger {
+      flex-shrink: 0;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .hamburger span {
+      display: block;
+      width: 22px;
+      height: 2px;
+      background: var(--text-mid);
+      border-radius: 2px;
+      transition: opacity 0.2s;
+    }
+    .hamburger:hover span { background: var(--text-dark); }
+
+    .top-bar h1 {
+      font-family: Caveat, cursive;
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--text-dark);
+      white-space: nowrap;
+    }
+    .top-bar .date {
+      font-size: 13px;
+      color: var(--text-soft);
+      white-space: nowrap;
+      margin-left: auto;
+    }
+
+    /* Quote section at the bottom of the page */
+    .quote-section {
+      width: 900px;
+      max-width: 100%;
+      margin-top: 24px;
+      text-align: center;
+    }
+    .quote-box {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 20px 32px;
+    }
+    .quote-box.has-quote { display: flex; }
+    .quote-banner-text {
+      font-family: Inter, sans-serif;
+      font-size: 18px;
+      font-weight: 400;
+      font-style: italic;
+      color: var(--text-mid);
+      line-height: 1.3;
+      text-align: left;
+    }
+    .quote-actions {
+      display: flex;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .icon-btn {
+      background: none;
+      border: none;
+      color: var(--text-faint);
+      font-size: 15px;
+      cursor: pointer;
+      padding: 4px;
+      line-height: 1;
+    }
+    .icon-btn:hover { color: var(--text-mid); }
+
+    .add-quote-btn {
+      background: none;
+      border: none;
+      color: var(--text-faint);
+      font-size: 13px;
+      font-family: Inter, sans-serif;
+      cursor: pointer;
+      padding: 4px 0;
+    }
+    .add-quote-btn:hover { color: var(--text-mid); }
+
+    /* Sidebar overlay */
+    .sidebar-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(0,0,0,0.15);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s;
+    }
+    .sidebar-overlay.visible { opacity: 1; pointer-events: all; }
+
+    /* Sidebar */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: 300px;
+      z-index: 150;
+      background: var(--paper);
+      display: flex;
+      flex-direction: column;
+      transform: translateX(-100%);
+      transition: transform 0.25s ease;
+      box-shadow: 2px 0 20px rgba(0,0,0,0.08);
+    }
+    .sidebar.open { transform: translateX(0); }
+
+    .sidebar-header {
+      padding: 24px 20px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar-header h2 {
+      font-family: Caveat, cursive;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-dark);
+    }
+    .new-list-btn {
+      background: var(--text-mid);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: Inter, sans-serif;
+    }
+    .new-list-btn:hover { opacity: 0.88; }
+
+    .sidebar-lists {
+      flex: 1;
+      overflow-y: auto;
+    }
+    .sidebar-list-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      cursor: pointer;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar-list-item:hover { background: var(--hover-tint); }
+    .sidebar-list-item.active { background: var(--hover-tint-strong); }
+
+    .list-date { font-size: 14px; font-weight: 500; color: var(--text-dark); }
+    .list-weekday { font-size: 11px; color: var(--text-soft); }
+    .list-preview { font-size: 11px; color: var(--text-faint); margin-top: 2px; }
+
+    .delete-list-btn {
+      background: none;
+      border: none;
+      color: var(--text-faintest);
+      font-size: 18px;
+      cursor: pointer;
+      padding: 0 4px;
+      line-height: 1;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .sidebar-list-item:hover .delete-list-btn { opacity: 1; }
+    .delete-list-btn:hover { color: #b04040; }
+
+    .sidebar-section {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+    }
+    .sidebar-section-label {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      margin-bottom: 10px;
+    }
+    .theme-swatches {
+      display: flex;
+      gap: 10px;
+    }
+    .theme-swatch {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color 0.15s, transform 0.15s;
+    }
+    .theme-swatch:hover { transform: scale(1.08); }
+    .theme-swatch.active { border-color: var(--text-mid); }
+
+    .sidebar-footer {
+      padding: 12px 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+    }
+    .sidebar-footer button {
+      flex: 1;
+      background: none;
+      border: 1px solid var(--border-strong);
+      border-radius: 5px;
+      padding: 8px 10px;
+      font-size: 12px;
+      color: var(--text-mid);
+      cursor: pointer;
+      font-family: Inter, sans-serif;
+    }
+    .sidebar-footer button:hover { background: var(--hover-tint); }
+
+    /* Unscheduled tasks */
+    .unscheduled-section {
+      width: 900px;
+      max-width: 100%;
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 20px 40px 12px;
+      margin-bottom: 16px;
+      display: none;
+      transition: background 0.15s;
+    }
+    .unscheduled-section.has-tasks { display: block; }
+    .unscheduled-section.drag-over-zone { background: var(--hover-tint); }
+    .unscheduled-label {
+      font-family: Caveat, cursive;
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text-mid);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .unscheduled-hint {
+      font-size: 12px;
+      color: var(--text-soft);
+      font-style: italic;
+      margin: 1px 0 12px;
+    }
+
+    /* Paper */
+    .paper {
+      background: var(--paper);
+      width: 900px;
+      max-width: 100%;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      margin-top: 100px;
+    }
+
+    /* Columns */
+    .columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: 480px;
+    }
+
+    .column {
+      display: flex;
+      flex-direction: column;
+    }
+    .column:first-child { border-right: 1px solid var(--border); }
+
+    /* Front burner takes full left column height */
+    .column:first-child .zone { flex: 1; }
+
+    .zone {
+      padding: 40px;
+      border-top: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+    .zone.drag-over-zone { background: var(--hover-tint); }
+    .column:last-child .zone:first-child { border-bottom: 1px solid var(--border); flex: 1; }
+    .column:last-child .zone:last-child { flex: 1; }
+    .column:first-child .zone:first-child { border-top: none; }
+    .column:last-child .zone:first-child { border-top: none; }
+
+    .zone-header { margin-bottom: 14px; }
+
+    .zone-label {
+      font-family: Caveat, cursive;
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text-mid);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .project-name {
+      display: block;
+      width: 100%;
+      background: none;
+      border: none;
+      border-bottom: 1.5px solid var(--border-strong);
+      font-family: Inter, sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-dark);
+      padding: 4px 0;
+      margin-bottom: 12px;
+      outline: none;
+    }
+    .project-name::placeholder { color: var(--text-faint); font-weight: 400; }
+    .project-name:focus { border-bottom-color: var(--text-soft); }
+
+    /* Task list */
+    .task-list {
+      list-style: none;
+      margin-bottom: 4px;
+      min-height: 12px;
+    }
+
+    .task-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 8px 7px 4px;
+      border-radius: 5px;
+      cursor: default;
+      position: relative;
+    }
+    .task-item:hover { background: var(--hover-tint); }
+    .task-item.drag-over { background: var(--hover-tint-strong); }
+
+    .postpone-btn {
+      background: none;
+      border: none;
+      color: var(--text-faintest);
+      font-size: 13px;
+      cursor: pointer;
+      padding: 0 2px;
+      line-height: 1;
+      opacity: 0;
+      transition: opacity 0.15s;
+      flex-shrink: 0;
+    }
+    .task-item:hover .postpone-btn { opacity: 1; }
+    .postpone-btn:hover { color: var(--text-mid); }
+
+    .postpone-menu {
+      position: absolute;
+      right: 28px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--paper);
+      border: 1px solid var(--border-strong);
+      border-radius: 6px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+      z-index: 50;
+      min-width: 150px;
+      overflow: hidden;
+      display: none;
+    }
+    .postpone-menu.open { display: block; }
+    .postpone-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 14px;
+      font-size: 13px;
+      color: var(--text-dark);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .postpone-menu-item:hover { background: var(--hover-tint); }
+    .postpone-menu-item span { color: var(--text-soft); font-size: 12px; }
+
+    .drag-handle {
+      width: 14px;
+      text-align: center;
+      color: var(--text-faintest);
+      font-size: 14px;
+      cursor: grab;
+      line-height: 1;
+      opacity: 0;
+      transition: opacity 0.15s;
+      user-select: none;
+      flex-shrink: 0;
+    }
+    .task-item:hover .drag-handle { opacity: 1; }
+    .drag-handle:active { cursor: grabbing; }
+
+    .task-item input[type="checkbox"] {
+      width: 15px;
+      height: 15px;
+      flex-shrink: 0;
+      accent-color: var(--text-mid);
+      cursor: pointer;
+      border: 1.5px solid var(--text-faint);
+      border-radius: 3px;
+    }
+
+    .task-text {
+      flex: 1;
+      background: none;
+      border: none;
+      font-family: Inter, sans-serif;
+      font-size: 14px;
+      color: var(--text-dark);
+      outline: none;
+      min-width: 0;
+    }
+    .task-text::placeholder { color: var(--text-faint); }
+    .task-text.completed {
+      text-decoration: line-through;
+      color: var(--text-faint);
+    }
+
+    .delete-btn {
+      background: none;
+      border: none;
+      color: var(--text-faintest);
+      font-size: 16px;
+      cursor: pointer;
+      padding: 0 2px;
+      line-height: 1;
+      opacity: 0;
+      transition: opacity 0.15s;
+      flex-shrink: 0;
+    }
+    .task-item:hover .delete-btn { opacity: 1; }
+    .delete-btn:hover { color: #b04040; }
+
+    /* Add task button */
+    .add-task-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: none;
+      border: none;
+      color: var(--text-faint);
+      font-size: 13px;
+      font-family: Inter, sans-serif;
+      cursor: pointer;
+      padding: 6px 4px 6px 24px;
+      margin-top: 2px;
+    }
+    .add-task-btn:hover { color: var(--text-mid); }
+    .plus {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      border: 1.5px solid currentColor;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      line-height: 1;
+    }
+
+    /* Reschedule */
+    .reschedule-wrap {
+      width: 900px;
+      max-width: 100%;
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 16px;
+    }
+    .reschedule-btn {
+      display: none;
+      background: none;
+      border: 1px solid var(--border-strong);
+      border-radius: 5px;
+      color: var(--text-soft);
+      font-size: 13px;
+      font-family: Inter, sans-serif;
+      cursor: pointer;
+      padding: 6px 12px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .reschedule-btn.visible { display: block; }
+    .reschedule-btn:hover { color: var(--text-mid); border-color: var(--text-faint); background: var(--hover-tint); }
+
+    /* Quote modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 250;
+      background: rgba(0,0,0,0.25);
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.visible { display: flex; }
+    .modal-box {
+      background: var(--paper);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      padding: 24px;
+      width: 420px;
+      max-width: 90vw;
+    }
+    .modal-box h3 {
+      font-family: Caveat, cursive;
+      font-size: 22px;
+      color: var(--text-dark);
+      margin-bottom: 12px;
+    }
+    .modal-box textarea {
+      width: 100%;
+      min-height: 80px;
+      font-family: Caveat, cursive;
+      font-size: 20px;
+      color: var(--text-mid);
+      border: 1px solid var(--border-strong);
+      border-radius: 6px;
+      padding: 10px;
+      outline: none;
+      resize: vertical;
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .modal-actions button {
+      border: none;
+      border-radius: 5px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-family: Inter, sans-serif;
+      cursor: pointer;
+    }
+    .modal-cancel-btn { background: none; color: var(--text-mid); border: 1px solid var(--border-strong) !important; }
+    .modal-cancel-btn:hover { background: var(--hover-tint); }
+    .modal-save-btn { background: var(--text-mid); color: #fff; }
+    .modal-save-btn:hover { opacity: 0.88; }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--text-dark);
+      color: #fff;
+      font-size: 13px;
+      padding: 10px 20px;
+      border-radius: 6px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s, transform 0.2s;
+      z-index: 300;
+      white-space: nowrap;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Confetti */
+    .confetti-piece {
+      position: fixed;
+      top: -10px;
+      z-index: 400;
+      pointer-events: none;
+      border-radius: 2px;
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      body { padding: 64px 10px 30px; }
+      .top-bar { padding: 14px 16px; gap: 10px; }
+      .top-bar h1 { font-size: 21px; }
+      .top-bar .date { font-size: 11px; }
+      .quote-banner-text { font-size: 22px; }
+      .quote-box { padding: 16px 18px; flex-direction: column; align-items: flex-start; }
+      .columns { grid-template-columns: 1fr; }
+      .column:first-child { border-right: none; border-bottom: 1px solid var(--border); }
+      .column:first-child .zone:first-child { border-top: none; }
+      .column:last-child .zone:first-child { border-top: 1px solid var(--border); }
+      .zone { padding: 16px 18px; }
+    }
+
+    /* ── Auth screen ─────────────────────────────────────────────── */
+    .auth-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 500;
+      background: #fffdf7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .auth-overlay.hidden { display: none; }
+    .auth-box {
+      width: 360px;
+      max-width: 100%;
+    }
+    .auth-logo {
+      font-family: Caveat, cursive;
+      font-size: 32px;
+      font-weight: 700;
+      color: #3a3530;
+      margin-bottom: 4px;
+    }
+    .auth-tagline {
+      font-size: 13px;
+      color: #c0afa7;
+      margin-bottom: 32px;
+    }
+    .auth-tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid #e8e2d9;
+      margin-bottom: 20px;
+    }
+    .auth-tab {
+      background: none;
+      border: none;
+      padding: 8px 0;
+      margin-right: 20px;
+      font-size: 14px;
+      font-family: Inter, sans-serif;
+      color: #b5ad9f;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+    }
+    .auth-tab.active { color: #3a3530; border-bottom-color: #6b6258; }
+    .auth-field {
+      width: 100%;
+      border: 1px solid #e8e2d9;
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-size: 14px;
+      font-family: Inter, sans-serif;
+      color: #3a3530;
+      outline: none;
+      margin-bottom: 10px;
+      background: #fff;
+    }
+    .auth-field:focus { border-color: #b5ad9f; }
+    .auth-submit-btn {
+      width: 100%;
+      background: #6b6258;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 11px;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: Inter, sans-serif;
+      cursor: pointer;
+      margin-top: 4px;
+    }
+    .auth-submit-btn:hover { background: #5a5148; }
+    .auth-divider {
+      text-align: center;
+      font-size: 12px;
+      color: #b5ad9f;
+      margin: 16px 0;
+      position: relative;
+    }
+    .auth-divider::before, .auth-divider::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 44%;
+      height: 1px;
+      background: #e8e2d9;
+    }
+    .auth-divider::before { left: 0; }
+    .auth-divider::after { right: 0; }
+    .auth-google-btn {
+      width: 100%;
+      background: none;
+      border: 1px solid #e8e2d9;
+      border-radius: 6px;
+      padding: 10px;
+      font-size: 14px;
+      font-family: Inter, sans-serif;
+      color: #3a3530;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .auth-google-btn:hover { background: #f9f7f2; }
+    .auth-error {
+      color: #b04040;
+      font-size: 13px;
+      margin-top: 10px;
+      min-height: 18px;
+    }
+    .auth-sync-badge {
+      display: none;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      color: #b5ad9f;
+    }
+    .auth-sync-badge.syncing { display: flex; }
+    .sync-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #b5ad9f;
+      animation: pulse 1.2s infinite;
+    }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+  </style>
+</head>
+<body>
+
+  <!-- Auth screen -->
+  <div class="auth-overlay" id="authOverlay">
+    <div class="auth-box">
+      <div class="auth-logo">🍳 Burner List 🔥</div>
+      <div class="auth-tagline">Your daily task planner</div>
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-tab="login" id="loginTab">Sign in</button>
+        <button class="auth-tab" data-tab="signup" id="signupTab">Sign up</button>
+      </div>
+      <input class="auth-field" type="email" id="authEmail" placeholder="Email" autocomplete="email">
+      <input class="auth-field" type="password" id="authPassword" placeholder="Password" autocomplete="current-password">
+      <button class="auth-submit-btn" id="authSubmitBtn">Sign in</button>
+      <div class="auth-divider">or</div>
+      <button class="auth-google-btn" id="googleAuthBtn">
+        <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        Continue with Google
+      </button>
+      <div class="auth-error" id="authError"></div>
+    </div>
+  </div>
+
+  <!-- Top bar: hamburger + title + date -->
+  <div class="top-bar">
+    <button class="hamburger" id="hamburgerBtn" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+    <h1>🍳 Burner List 🔥</h1>
+    <div class="date" id="dateDisplay"></div>
+  </div>
+
+  <!-- Sidebar overlay -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h2>My Lists</h2>
+      <button class="new-list-btn" id="newListBtn">+ New List</button>
+    </div>
+    <div class="sidebar-lists" id="sidebarLists"></div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Theme</div>
+      <div class="theme-swatches" id="themeSwatches">
+        <div class="theme-swatch" data-theme="default" style="background:#e8e0d4" title="Sand"></div>
+        <div class="theme-swatch" data-theme="sage" style="background:#dde4d8" title="Sage"></div>
+        <div class="theme-swatch" data-theme="slate" style="background:#dde3e6" title="Slate"></div>
+        <div class="theme-swatch" data-theme="clay" style="background:#ead9d0" title="Clay"></div>
+        <div class="theme-swatch" data-theme="lavender" style="background:#e2dde8" title="Lavender"></div>
+      </div>
+    </div>
+    <div class="sidebar-footer" style="flex-direction:column; gap:10px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; width:100%;">
+        <div style="font-size:12px; color:var(--text-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;" id="sidebarUserEmail"></div>
+        <div class="auth-sync-badge" id="syncBadge"><div class="sync-dot"></div> Saving…</div>
+        <button id="logoutBtn" style="background:none;border:none;font-size:12px;color:var(--text-faint);cursor:pointer;font-family:Inter,sans-serif;padding:0;flex-shrink:0;margin-left:8px;">Sign out</button>
+      </div>
+      <div style="display:flex;gap:8px;width:100%;">
+        <button id="exportBtn" style="flex:1;">Export</button>
+        <button id="importBtn" style="flex:1;">Import</button>
+      </div>
+    </div>
+    <input type="file" id="importFile" accept=".json" style="display:none">
+  </div>
+
+  <!-- Unscheduled tasks (from reschedule) -->
+  <div class="unscheduled-section" id="unscheduledSection">
+    <div class="unscheduled-label">Unscheduled Tasks</div>
+    <div class="unscheduled-hint">Drag these into a section below</div>
+    <ul class="task-list" data-zone="unscheduled" id="unscheduledList"></ul>
+  </div>
+
+  <!-- Main paper -->
+  <div class="paper">
+    <div class="columns">
+      <!-- Left: Front Burner -->
+      <div class="column">
+        <div class="zone" id="front-burner">
+          <div class="zone-header">
+            <div class="zone-label">Front Burner</div>
+          </div>
+          <input class="project-name" data-zone="front-burner" placeholder="Your #1 priority" autocomplete="off">
+          <ul class="task-list" data-zone="front-burner"></ul>
+          <button class="add-task-btn" data-zone="front-burner"><span class="plus">+</span> Add task</button>
+        </div>
+      </div>
+
+      <!-- Right: Back Burner + Kitchen Sink -->
+      <div class="column">
+        <div class="zone" id="back-burner">
+          <div class="zone-header">
+            <div class="zone-label">Back Burner</div>
+          </div>
+          <input class="project-name" data-zone="back-burner" placeholder="Your #2 project" autocomplete="off">
+          <ul class="task-list" data-zone="back-burner"></ul>
+          <button class="add-task-btn" data-zone="back-burner"><span class="plus">+</span> Add task</button>
+        </div>
+        <div class="zone" id="kitchen-sink">
+          <div class="zone-header">
+            <div class="zone-label">Kitchen Sink</div>
+          </div>
+          <ul class="task-list" data-zone="kitchen-sink"></ul>
+          <button class="add-task-btn" data-zone="kitchen-sink"><span class="plus">+</span> Add task</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="reschedule-wrap">
+    <button class="reschedule-btn" id="rescheduleBtn">Reschedule Tasks →</button>
+  </div>
+
+  <!-- Quote section -->
+  <div class="quote-section">
+    <div class="quote-box" id="quoteBox">
+      <div class="quote-banner-text" id="quoteBannerText"></div>
+      <div class="quote-actions">
+        <button class="icon-btn" id="editQuoteBtn" title="Edit quote">✎</button>
+        <button class="icon-btn" id="deleteQuoteBtn" title="Delete quote">🗑</button>
+      </div>
+    </div>
+    <button class="add-quote-btn" id="addQuoteBtn">+ Add quote of the day</button>
+  </div>
+
+  <!-- Quote modal -->
+  <div class="modal-overlay" id="quoteModalOverlay">
+    <div class="modal-box">
+      <h3>Quote of the day</h3>
+      <textarea id="quoteModalInput" placeholder="Add an inspiring quote…"></textarea>
+      <div class="modal-actions">
+        <button class="modal-cancel-btn" id="quoteModalCancel">Cancel</button>
+        <button class="modal-save-btn" id="quoteModalSave">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ── Supabase config — fill these in after creating your project ───
+    const SUPABASE_URL      = 'https://thzjxyvxjkjxdugrfpti.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_rwnOXTss_SYV90IVtDL2Ww_CXKF5t08';
+    const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // ── In-memory cache + dirty tracking ─────────────────────────────
+    let _listsCache = {};
+    let _currentUser = null;
+    let _dirtyKeys   = new Set();
+    let _deletedKeys = new Set();
+    let _syncTimer   = null;
+
+    // ── Storage helpers ───────────────────────────────────────────────
+    function getAllLists() { return _listsCache; }
+
+    function saveAllLists(lists) {
+      _listsCache = lists;
+      Object.keys(lists).forEach(k => _dirtyKeys.add(k));
+      _scheduleSync();
+    }
+
+    function deleteListKey(key) {
+      delete _listsCache[key];
+      _dirtyKeys.delete(key);
+      _deletedKeys.add(key);
+      _scheduleSync();
+    }
+
+    function _scheduleSync() {
+      clearTimeout(_syncTimer);
+      _syncTimer = setTimeout(_flushSync, 600);
+    }
+
+    async function _flushSync() {
+      if (!_currentUser) return;
+      const badge = document.getElementById('syncBadge');
+      if (badge) badge.classList.add('syncing');
+
+      if (_deletedKeys.size > 0) {
+        const toDelete = [..._deletedKeys];
+        _deletedKeys.clear();
+        await _sb.from('burner_lists').delete()
+          .eq('user_id', _currentUser.id)
+          .in('date_key', toDelete);
+      }
+
+      if (_dirtyKeys.size > 0) {
+        const keys = [..._dirtyKeys];
+        _dirtyKeys.clear();
+        const rows = keys
+          .filter(k => _listsCache[k])
+          .map(k => ({ user_id: _currentUser.id, date_key: k, state: _listsCache[k] }));
+        if (rows.length) {
+          const { error } = await _sb.from('burner_lists')
+            .upsert(rows, { onConflict: 'user_id,date_key' });
+          if (error) { keys.forEach(k => _dirtyKeys.add(k)); console.error(error); }
+        }
+      }
+
+      if (badge) badge.classList.remove('syncing');
+    }
+
+    async function _loadAllLists() {
+      if (!_currentUser) return {};
+      const { data, error } = await _sb.from('burner_lists')
+        .select('date_key, state').eq('user_id', _currentUser.id);
+      if (error) { console.error(error); return {}; }
+      const result = {};
+      data.forEach(r => { result[r.date_key] = r.state; });
+      return result;
+    }
+
+    function getActiveKey() { return localStorage.getItem('burner-active') || todayKey(); }
+    function setActiveKey(key) { localStorage.setItem('burner-active', key); }
+    function todayKey() { return new Date().toISOString().slice(0, 10); }
+    function makeDefaultState() {
+      return {
+        'front-burner': { name: '', tasks: [] },
+        'back-burner':  { name: '', tasks: [] },
+        'kitchen-sink': { name: '', tasks: [] },
+        unscheduled: [],
+        quote: ''
+      };
+    }
+    function saveState() {
+      const lists = getAllLists();
+      const key = getActiveKey();
+      const state = {};
+      ['front-burner', 'back-burner', 'kitchen-sink'].forEach(zone => {
+        const nameEl = document.querySelector(`.project-name[data-zone="${zone}"]`);
+        const tasks = Array.from(document.querySelectorAll(`.task-list[data-zone="${zone}"] .task-item`)).map(li => ({
+          text: li.querySelector('.task-text').value,
+          done: li.querySelector('input[type="checkbox"]').checked
+        }));
+        state[zone] = { name: nameEl ? nameEl.value : '', tasks };
+      });
+      state.unscheduled = Array.from(document.querySelectorAll(`.task-list[data-zone="unscheduled"] .task-item`)).map(li => ({
+        text: li.querySelector('.task-text').value,
+        done: li.querySelector('input[type="checkbox"]').checked
+      }));
+      const lists2 = getAllLists();
+      state.quote = (lists2[key] && lists2[key].quote) || '';
+      lists[key] = state;
+      saveAllLists(lists);
+      updateUnscheduledSection();
+      updateRescheduleBar();
+      renderSidebar();
+    }
+
+    function updateUnscheduledSection() {
+      const section = document.getElementById('unscheduledSection');
+      const hasTasks = document.querySelectorAll('.task-list[data-zone="unscheduled"] .task-item').length > 0;
+      section.classList.toggle('has-tasks', hasTasks);
+    }
+
+    // ── Date display ──────────────────────────────────────────────────
+    function formatDateKey(key) {
+      const d = new Date(key + 'T12:00:00');
+      return d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    }
+    function formatShortDate(key) {
+      const d = new Date(key + 'T12:00:00');
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+    function formatWeekday(key) {
+      return new Date(key + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long' });
+    }
+    function updateDateDisplay() {
+      document.getElementById('dateDisplay').textContent = formatDateKey(getActiveKey());
+    }
+
+    // ── Reschedule bar ────────────────────────────────────────────────
+    function updateRescheduleBar() {
+      const active = getActiveKey();
+      const btn = document.getElementById('rescheduleBtn');
+      const isPast = active < todayKey();
+      const hasUndone = Array.from(document.querySelectorAll('.task-list .task-item'))
+        .some(li => !li.querySelector('input[type="checkbox"]').checked && li.querySelector('.task-text').value.trim() !== '');
+      btn.classList.toggle('visible', isPast && hasUndone);
+    }
+
+    // ── Theme ─────────────────────────────────────────────────────────
+    function getTheme() {
+      return localStorage.getItem('burner-theme') || 'default';
+    }
+    function applyTheme(theme) {
+      if (theme === 'default') {
+        document.body.removeAttribute('data-theme');
+      } else {
+        document.body.setAttribute('data-theme', theme);
+      }
+      document.querySelectorAll('.theme-swatch').forEach(sw => {
+        sw.classList.toggle('active', sw.dataset.theme === theme);
+      });
+    }
+    function setTheme(theme) {
+      localStorage.setItem('burner-theme', theme);
+      applyTheme(theme);
+    }
+
+    // ── Sidebar ───────────────────────────────────────────────────────
+    function toggleSidebar(open) {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      const isOpen = open !== undefined ? open : !sidebar.classList.contains('open');
+      sidebar.classList.toggle('open', isOpen);
+      overlay.classList.toggle('visible', isOpen);
+    }
+
+    function renderSidebar() {
+      const lists = getAllLists();
+      const activeKey = getActiveKey();
+      const container = document.getElementById('sidebarLists');
+      const keys = Object.keys(lists).sort((a, b) => b.localeCompare(a));
+
+      container.innerHTML = keys.map(key => {
+        const state = lists[key];
+        const allTasks = Object.values(state).flatMap(z => (z && z.tasks) || []);
+        const remaining = allTasks.filter(t => !t.done && t.text && t.text.trim() !== '');
+        const preview = remaining.length === 0
+          ? (allTasks.length === 0 ? 'Empty list' : 'All done!')
+          : remaining.slice(0, 2).map(t => t.text).filter(Boolean).join(', ') || 'Empty list';
+
+        return `<div class="sidebar-list-item${key === activeKey ? ' active' : ''}" data-key="${key}">
+          <div>
+            <div class="list-date">${formatShortDate(key)}</div>
+            <div class="list-weekday">${formatWeekday(key)}</div>
+            <div class="list-preview">${escapeHtml(preview)}</div>
+          </div>
+          <button class="delete-list-btn" data-key="${key}" title="Delete list">×</button>
+        </div>`;
+      }).join('');
+
+      container.querySelectorAll('.sidebar-list-item').forEach(item => {
+        item.addEventListener('click', e => {
+          if (e.target.classList.contains('delete-list-btn')) return;
+          const key = item.dataset.key;
+          setActiveKey(key);
+          render();
+          toggleSidebar(false);
+        });
+      });
+      container.querySelectorAll('.delete-list-btn').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          const key = btn.dataset.key;
+          deleteListKey(key);
+          if (key === getActiveKey()) {
+            const remaining = Object.keys(lists).sort((a,b) => b.localeCompare(a));
+            setActiveKey(remaining[0] || todayKey());
+            if (!lists[getActiveKey()]) {
+              const ls = getAllLists();
+              ls[getActiveKey()] = makeDefaultState();
+              saveAllLists(ls);
+            }
+            render();
+          } else {
+            renderSidebar();
+          }
+        });
+      });
+    }
+
+    // ── Task rendering ────────────────────────────────────────────────
+    function escapeHtml(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function zoneHasEmptyTask(zone) {
+      return Array.from(document.querySelectorAll(`.task-list[data-zone="${zone}"] .task-text`))
+        .some(input => input.value.trim() === '');
+    }
+
+    function removeIfEmpty(li) {
+      const text = li.querySelector('.task-text');
+      if (text.value.trim() === '' && li.isConnected) {
+        li.remove();
+        saveState();
+      }
+    }
+
+    function createTaskItem(zone, task, index) {
+      const li = document.createElement('li');
+      li.className = 'task-item';
+      li.draggable = true;
+      li.dataset.zone = zone;
+      li.dataset.index = index;
+
+      const handle = document.createElement('span');
+      handle.className = 'drag-handle';
+      handle.textContent = '⠿';
+      handle.setAttribute('aria-hidden', 'true');
+
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = task.done;
+
+      const text = document.createElement('input');
+      text.type = 'text';
+      text.className = 'task-text' + (task.done ? ' completed' : '');
+      text.value = task.text;
+      text.placeholder = 'Task…';
+
+      const postponeBtn = document.createElement('button');
+      postponeBtn.className = 'postpone-btn';
+      postponeBtn.title = 'Postpone';
+      postponeBtn.innerHTML = '&#128197;'; // 📅
+
+      const postponeMenu = document.createElement('div');
+      postponeMenu.className = 'postpone-menu';
+
+      const tomorrowKey = (() => {
+        const d = new Date(); d.setDate(d.getDate() + 1);
+        return d.toISOString().slice(0, 10);
+      })();
+      const tomorrowLabel = new Date(tomorrowKey + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
+      const menuItem = document.createElement('div');
+      menuItem.className = 'postpone-menu-item';
+      menuItem.innerHTML = `Tomorrow <span>${tomorrowLabel}</span>`;
+      postponeMenu.appendChild(menuItem);
+
+      postponeBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        postponeMenu.classList.toggle('open');
+      });
+      menuItem.addEventListener('click', e => {
+        e.stopPropagation();
+        postponeMenu.classList.remove('open');
+        const taskText = text.value.trim();
+        if (!taskText) return;
+        const lists = getAllLists();
+        if (!lists[tomorrowKey]) lists[tomorrowKey] = makeDefaultState();
+        if (!lists[tomorrowKey].unscheduled) lists[tomorrowKey].unscheduled = [];
+        lists[tomorrowKey].unscheduled.push({ text: taskText, done: false });
+        saveAllLists(lists);
+        li.remove();
+        saveState();
+        showToast(`Postponed to ${tomorrowLabel}`);
+      });
+
+      const del = document.createElement('button');
+      del.className = 'delete-btn';
+      del.title = 'Delete';
+      del.textContent = '×';
+
+      li.append(handle, cb, text, postponeBtn, postponeMenu, del);
+
+      cb.addEventListener('change', () => {
+        text.classList.toggle('completed', cb.checked);
+        const list = li.closest('.task-list');
+        if (cb.checked) {
+          // Rise to the very top
+          list.insertBefore(li, list.firstChild);
+          launchConfetti();
+        } else {
+          // Sink below the checked block — insert before the first unchecked item
+          const firstUnchecked = Array.from(list.children).find(
+            item => item !== li && !item.querySelector('input[type="checkbox"]').checked
+          );
+          list.insertBefore(li, firstUnchecked || null);
+        }
+        saveState();
+      });
+      text.addEventListener('input', () => saveState());
+      text.addEventListener('blur', () => removeIfEmpty(li));
+      text.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if (text.value.trim() === '' || zone === 'unscheduled') return;
+          addTask(zone);
+        } else if (e.key === 'Backspace' && text.value === '') {
+          e.preventDefault();
+          li.remove();
+          saveState();
+          const tasks = document.querySelectorAll(`.task-list[data-zone="${zone}"] .task-text`);
+          if (tasks.length) tasks[tasks.length - 1].focus();
+        }
+      });
+      del.addEventListener('click', () => {
+        li.remove();
+        saveState();
+      });
+
+      // Drag handlers
+      li.addEventListener('dragstart', handleDragStart);
+      li.addEventListener('dragend', handleDragEnd);
+      li.addEventListener('dragover', e => { e.preventDefault(); e.stopPropagation(); li.classList.add('drag-over'); });
+      li.addEventListener('dragleave', () => li.classList.remove('drag-over'));
+      li.addEventListener('drop', handleDrop);
+
+      return li;
+    }
+
+    function addTask(zone, text = '', done = false, focus = true) {
+      const list = document.querySelector(`.task-list[data-zone="${zone}"]`);
+      // Don't allow more than one empty task in a zone — focus the existing one instead
+      if (text === '' && zoneHasEmptyTask(zone)) {
+        const existing = Array.from(list.querySelectorAll('.task-text')).find(input => input.value.trim() === '');
+        if (existing && focus) existing.focus();
+        return;
+      }
+      const li = createTaskItem(zone, { text, done }, list.children.length);
+      list.appendChild(li);
+      if (focus) {
+        li.querySelector('.task-text').focus();
+      }
+      saveState();
+    }
+
+    // ── Drag & drop ───────────────────────────────────────────────────
+    let dragSrc = null;
+
+    function handleDragStart(e) {
+      dragSrc = this;
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', '');
+      setTimeout(() => this.style.opacity = '0.4', 0);
+    }
+    function handleDragEnd(e) {
+      this.style.opacity = '';
+      document.querySelectorAll('.task-item').forEach(li => li.classList.remove('drag-over'));
+      document.querySelectorAll('.zone, .unscheduled-section').forEach(z => z.classList.remove('drag-over-zone'));
+      saveState();
+    }
+    function handleDrop(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.classList.remove('drag-over');
+      if (!dragSrc || dragSrc === this) return;
+      const dstList = this.closest('.task-list');
+      const allDst = Array.from(dstList.children);
+      const insertBefore = allDst.indexOf(this);
+      dstList.insertBefore(dragSrc, allDst[insertBefore] || null);
+      saveState();
+    }
+
+    // Allow dropping directly into empty (or anywhere in) a task-list / zone
+    function bindZoneDropTargets() {
+      document.querySelectorAll('.task-list').forEach(list => {
+        list.addEventListener('dragover', e => {
+          e.preventDefault();
+          e.stopPropagation();
+          const zone = list.closest('.zone, .unscheduled-section');
+          if (zone) zone.classList.add('drag-over-zone');
+        });
+        list.addEventListener('dragleave', e => {
+          const zone = list.closest('.zone, .unscheduled-section');
+          if (zone) zone.classList.remove('drag-over-zone');
+        });
+        list.addEventListener('drop', e => {
+          e.preventDefault();
+          e.stopPropagation();
+          const zone = list.closest('.zone, .unscheduled-section');
+          if (zone) zone.classList.remove('drag-over-zone');
+          if (!dragSrc) return;
+          if (e.target === list) {
+            // Dropped on empty space within the list (not on a task item)
+            list.appendChild(dragSrc);
+            saveState();
+          }
+        });
+      });
+    }
+
+    // ── Confetti ──────────────────────────────────────────────────────
+    function launchConfetti() {
+      const colors = ['#d9b08c', '#9aa97e', '#b08ca0', '#8cb0a9', '#d9c98c'];
+      const count = 40;
+      for (let i = 0; i < count; i++) {
+        const piece = document.createElement('div');
+        piece.className = 'confetti-piece';
+        const size = 6 + Math.random() * 6;
+        piece.style.width = size + 'px';
+        piece.style.height = size * 0.4 + 'px';
+        piece.style.left = Math.random() * 100 + 'vw';
+        piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+        const duration = 1.4 + Math.random() * 1.2;
+        const rotation = Math.random() * 360;
+        piece.style.transform = `rotate(${rotation}deg)`;
+        document.body.appendChild(piece);
+        const fall = piece.animate([
+          { transform: `translateY(0) rotate(${rotation}deg)`, opacity: 1 },
+          { transform: `translateY(${window.innerHeight + 20}px) rotate(${rotation + 360}deg)`, opacity: 0.9 }
+        ], { duration: duration * 1000, easing: 'ease-in' });
+        fall.onfinish = () => piece.remove();
+      }
+    }
+
+    // ── Quote ─────────────────────────────────────────────────────────
+    function renderQuote(quote) {
+      const box = document.getElementById('quoteBox');
+      const textEl = document.getElementById('quoteBannerText');
+      const addBtn = document.getElementById('addQuoteBtn');
+      if (quote && quote.trim()) {
+        textEl.textContent = quote;
+        box.classList.add('has-quote');
+        addBtn.style.display = 'none';
+      } else {
+        box.classList.remove('has-quote');
+        addBtn.style.display = '';
+      }
+    }
+    function deleteQuote() {
+      const lists = getAllLists();
+      const key = getActiveKey();
+      if (lists[key]) {
+        lists[key].quote = '';
+        saveAllLists(lists);
+      }
+      renderQuote('');
+    }
+    function openQuoteModal() {
+      const lists = getAllLists();
+      const key = getActiveKey();
+      const quote = (lists[key] && lists[key].quote) || '';
+      document.getElementById('quoteModalInput').value = quote;
+      document.getElementById('quoteModalOverlay').classList.add('visible');
+      document.getElementById('quoteModalInput').focus();
+    }
+    function closeQuoteModal() {
+      document.getElementById('quoteModalOverlay').classList.remove('visible');
+    }
+    function saveQuote() {
+      const value = document.getElementById('quoteModalInput').value;
+      const lists = getAllLists();
+      const key = getActiveKey();
+      if (!lists[key]) lists[key] = makeDefaultState();
+      lists[key].quote = value;
+      saveAllLists(lists);
+      renderQuote(value);
+      closeQuoteModal();
+    }
+
+    // ── Main render ───────────────────────────────────────────────────
+    function render() {
+      const lists = getAllLists();
+      const key = getActiveKey();
+      if (!lists[key]) {
+        lists[key] = makeDefaultState();
+        saveAllLists(lists);
+      }
+      const state = lists[key];
+
+      updateDateDisplay();
+
+      ['front-burner', 'back-burner', 'kitchen-sink'].forEach(zone => {
+        const zoneState = state[zone] || { name: '', tasks: [] };
+        const nameEl = document.querySelector(`.project-name[data-zone="${zone}"]`);
+        if (nameEl) nameEl.value = zoneState.name || '';
+
+        const list = document.querySelector(`.task-list[data-zone="${zone}"]`);
+        list.innerHTML = '';
+        (zoneState.tasks || []).forEach((task, i) => {
+          list.appendChild(createTaskItem(zone, task, i));
+        });
+      });
+
+      const unscheduledList = document.getElementById('unscheduledList');
+      unscheduledList.innerHTML = '';
+      (state.unscheduled || []).forEach((task, i) => {
+        unscheduledList.appendChild(createTaskItem('unscheduled', task, i));
+      });
+      updateUnscheduledSection();
+
+      renderQuote(state.quote || '');
+      updateRescheduleBar();
+      renderSidebar();
+    }
+
+    // ── Toast ─────────────────────────────────────────────────────────
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    // ── Event bindings ────────────────────────────────────────────────
+    document.getElementById('hamburgerBtn').addEventListener('click', () => toggleSidebar());
+    document.getElementById('sidebarOverlay').addEventListener('click', () => toggleSidebar(false));
+    document.getElementById('newListBtn').addEventListener('click', () => {
+      const key = todayKey();
+      const lists = getAllLists();
+      let newKey = key;
+      if (!lists[newKey]) {
+        lists[newKey] = makeDefaultState();
+        saveAllLists(lists);
+      }
+      setActiveKey(newKey);
+      render();
+      toggleSidebar(false);
+    });
+
+    document.querySelectorAll('.add-task-btn').forEach(btn => {
+      btn.addEventListener('click', () => addTask(btn.dataset.zone));
+    });
+
+    // Project name auto-save
+    document.querySelectorAll('.project-name').forEach(input => {
+      input.addEventListener('input', () => saveState());
+    });
+
+    // Quote modal bindings
+    document.getElementById('addQuoteBtn').addEventListener('click', openQuoteModal);
+    document.getElementById('editQuoteBtn').addEventListener('click', openQuoteModal);
+    document.getElementById('deleteQuoteBtn').addEventListener('click', deleteQuote);
+    document.getElementById('quoteModalCancel').addEventListener('click', closeQuoteModal);
+    document.getElementById('quoteModalSave').addEventListener('click', saveQuote);
+    document.getElementById('quoteModalOverlay').addEventListener('click', e => {
+      if (e.target.id === 'quoteModalOverlay') closeQuoteModal();
+    });
+
+    // Close postpone menus when clicking outside
+    document.addEventListener('click', () => {
+      document.querySelectorAll('.postpone-menu.open').forEach(m => m.classList.remove('open'));
+    });
+
+    // Theme swatches
+    document.querySelectorAll('.theme-swatch').forEach(sw => {
+      sw.addEventListener('click', () => setTheme(sw.dataset.theme));
+    });
+
+    // Reschedule: carry uncompleted tasks to a new list for the next day
+    document.getElementById('rescheduleBtn').addEventListener('click', () => {
+      const lists = getAllLists();
+      const activeKey = getActiveKey();
+      const state = lists[activeKey] || makeDefaultState();
+
+      const d = new Date(activeKey + 'T12:00:00');
+      d.setDate(d.getDate() + 1);
+      const nextKey = d.toISOString().slice(0, 10);
+
+      const nextState = lists[nextKey] || makeDefaultState();
+      if (!nextState.unscheduled) nextState.unscheduled = [];
+
+      let moved = 0;
+      ['front-burner', 'back-burner', 'kitchen-sink'].forEach(zone => {
+        const undone = (state[zone].tasks || []).filter(t => !t.done && t.text && t.text.trim() !== '');
+        if (undone.length) {
+          nextState.unscheduled = [...undone.map(t => ({ ...t, done: false })), ...nextState.unscheduled];
+          moved += undone.length;
+          state[zone].tasks = state[zone].tasks.map(t => (t.done || t.text.trim() === '') ? t : { ...t, done: true });
+        }
+      });
+
+      lists[activeKey] = state;
+      lists[nextKey] = nextState;
+      saveAllLists(lists);
+      render();
+      if (moved > 0) showToast(`${moved} task${moved > 1 ? 's' : ''} moved to ${formatShortDate(nextKey)}`);
+    });
+
+    // Export
+    document.getElementById('exportBtn').addEventListener('click', () => {
+      const data = { 'burner-lists': getAllLists(), 'burner-active': getActiveKey() };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `burner-list-${todayKey()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Data exported!');
+    });
+
+    // Import
+    document.getElementById('importBtn').addEventListener('click', () => {
+      document.getElementById('importFile').click();
+    });
+    document.getElementById('importFile').addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        try {
+          const imported = JSON.parse(ev.target.result);
+          if (imported['burner-lists']) saveAllLists(imported['burner-lists']);
+          if (imported['burner-active']) setActiveKey(imported['burner-active']);
+          render();
+          showToast('Data imported!');
+        } catch {
+          showToast('Invalid file');
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = '';
+    });
+
+    // ── Auth helpers ──────────────────────────────────────────────────
+    function showAuthOverlay() {
+      document.getElementById('authOverlay').classList.remove('hidden');
+    }
+    function hideAuthOverlay() {
+      document.getElementById('authOverlay').classList.add('hidden');
+    }
+
+    async function onSignedIn(user) {
+      _currentUser = user;
+      const emailEl = document.getElementById('sidebarUserEmail');
+      if (emailEl) emailEl.textContent = user.email;
+      hideAuthOverlay();
+      _listsCache = await _loadAllLists();
+      const key = todayKey();
+      if (!_listsCache[key]) {
+        _listsCache[key] = makeDefaultState();
+        saveAllLists(_listsCache);
+      }
+      if (!getActiveKey() || !_listsCache[getActiveKey()]) setActiveKey(key);
+      bindZoneDropTargets();
+      render();
+    }
+
+    // ── Auth UI bindings ──────────────────────────────────────────────
+    let _authMode = 'login';
+    document.getElementById('loginTab').addEventListener('click', () => {
+      _authMode = 'login';
+      document.getElementById('loginTab').classList.add('active');
+      document.getElementById('signupTab').classList.remove('active');
+      document.getElementById('authSubmitBtn').textContent = 'Sign in';
+      document.getElementById('authPassword').autocomplete = 'current-password';
+      document.getElementById('authError').textContent = '';
+    });
+    document.getElementById('signupTab').addEventListener('click', () => {
+      _authMode = 'signup';
+      document.getElementById('signupTab').classList.add('active');
+      document.getElementById('loginTab').classList.remove('active');
+      document.getElementById('authSubmitBtn').textContent = 'Create account';
+      document.getElementById('authPassword').autocomplete = 'new-password';
+      document.getElementById('authError').textContent = '';
+    });
+    document.getElementById('authSubmitBtn').addEventListener('click', async () => {
+      const email = document.getElementById('authEmail').value.trim();
+      const password = document.getElementById('authPassword').value;
+      const errEl = document.getElementById('authError');
+      errEl.textContent = '';
+      if (!email || !password) { errEl.textContent = 'Please enter email and password.'; return; }
+      const btn = document.getElementById('authSubmitBtn');
+      btn.disabled = true;
+      btn.textContent = '…';
+      const fn = _authMode === 'login'
+        ? _sb.auth.signInWithPassword({ email, password })
+        : _sb.auth.signUp({ email, password });
+      const { error } = await fn;
+      btn.disabled = false;
+      btn.textContent = _authMode === 'login' ? 'Sign in' : 'Create account';
+      if (error) { errEl.textContent = error.message; return; }
+      if (_authMode === 'signup') errEl.textContent = 'Check your email to confirm your account.';
+    });
+    document.getElementById('googleAuthBtn').addEventListener('click', async () => {
+      await _sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.href } });
+    });
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await _sb.auth.signOut();
+      _currentUser = null;
+      _listsCache = {};
+      toggleSidebar(false);
+      showAuthOverlay();
+    });
+
+    // ── Init ──────────────────────────────────────────────────────────
+    applyTheme(getTheme());
+    (async () => {
+      const { data: { session } } = await _sb.auth.getSession();
+      if (session) {
+        await onSignedIn(session.user);
+      } else {
+        showAuthOverlay();
+      }
+      _sb.auth.onAuthStateChange(async (event, session) => {
+        if (event === 'SIGNED_IN' && session) await onSignedIn(session.user);
+        if (event === 'SIGNED_OUT') { _currentUser = null; showAuthOverlay(); }
+      });
+    })();
+  </script>
+</body>
+</html>
