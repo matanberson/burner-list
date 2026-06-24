@@ -235,9 +235,9 @@
       border-bottom: 1px solid var(--border);
     }
     .sidebar-header h2 {
-      font-family: Caveat, cursive;
-      font-size: 24px;
-      font-weight: 700;
+      font-family: Inter, sans-serif;
+      font-size: 16px;
+      font-weight: 600;
       color: var(--text-dark);
     }
     .new-list-btn {
@@ -314,13 +314,10 @@
     .theme-swatch.active { border-color: var(--text-mid); }
 
     .sidebar-footer {
-      padding: 12px 20px;
+      padding: 10px 20px;
       border-top: 1px solid var(--border);
-      display: flex;
-      gap: 8px;
     }
-    .sidebar-footer button {
-      flex: 1;
+    .sidebar-btn {
       background: none;
       border: 1px solid var(--border-strong);
       border-radius: 5px;
@@ -330,7 +327,7 @@
       cursor: pointer;
       font-family: Inter, sans-serif;
     }
-    .sidebar-footer button:hover { background: var(--hover-tint); }
+    .sidebar-btn:hover { background: var(--hover-tint); }
 
     /* Unscheduled tasks */
     .unscheduled-section {
@@ -347,12 +344,12 @@
     .unscheduled-section.has-tasks { display: block; }
     .unscheduled-section.drag-over-zone { background: var(--hover-tint); }
     .unscheduled-label {
-      font-family: Caveat, cursive;
-      font-size: 20px;
+      font-family: Inter, sans-serif;
+      font-size: 11px;
       font-weight: 600;
       color: var(--text-mid);
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 0.6px;
     }
     .unscheduled-hint {
       font-size: 12px;
@@ -394,7 +391,7 @@
       transition: background 0.15s;
     }
     .zone.drag-over-zone { background: var(--hover-tint); }
-    .column:last-child .zone:first-child { border-bottom: 1px solid var(--border); flex: 1; }
+    .column:last-child .zone:first-child { flex: 1; }
     .column:last-child .zone:last-child { flex: 1; }
     .column:first-child .zone:first-child { border-top: none; }
     .column:last-child .zone:first-child { border-top: none; }
@@ -402,12 +399,12 @@
     .zone-header { margin-bottom: 14px; }
 
     .zone-label {
-      font-family: Caveat, cursive;
-      font-size: 20px;
+      font-family: Inter, sans-serif;
+      font-size: 11px;
       font-weight: 600;
       color: var(--text-mid);
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 0.6px;
     }
     .project-name {
       display: block;
@@ -441,7 +438,9 @@
       border-radius: 5px;
       cursor: default;
       position: relative;
+      border-bottom: 1px solid var(--border);
     }
+    .task-item:last-child { border-bottom: none; }
     .task-item:hover { background: var(--hover-tint); }
     .task-item.drag-over { background: var(--hover-tint-strong); }
 
@@ -504,13 +503,32 @@
     .drag-handle:active { cursor: grabbing; }
 
     .task-item input[type="checkbox"] {
-      width: 15px;
-      height: 15px;
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
       flex-shrink: 0;
-      accent-color: var(--text-mid);
       cursor: pointer;
       border: 1.5px solid var(--text-faint);
-      border-radius: 3px;
+      border-radius: 50%;
+      background: transparent;
+      position: relative;
+    }
+    .task-item input[type="checkbox"]:checked {
+      background: var(--text-mid);
+      border-color: var(--text-mid);
+    }
+    .task-item input[type="checkbox"]:checked::after {
+      content: '';
+      position: absolute;
+      left: 4px;
+      top: 1px;
+      width: 5px;
+      height: 8px;
+      border: 2px solid #fff;
+      border-top: none;
+      border-left: none;
+      transform: rotate(45deg);
     }
 
     .task-text {
@@ -560,15 +578,15 @@
     }
     .add-task-btn:hover { color: var(--text-mid); }
     .plus {
-      width: 18px;
-      height: 18px;
+      width: 16px;
+      height: 16px;
       flex-shrink: 0;
       border: 1.5px solid currentColor;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 13px;
+      font-size: 12px;
       line-height: 1;
     }
 
@@ -616,16 +634,17 @@
       max-width: 90vw;
     }
     .modal-box h3 {
-      font-family: Caveat, cursive;
-      font-size: 22px;
+      font-family: Inter, sans-serif;
+      font-size: 16px;
+      font-weight: 600;
       color: var(--text-dark);
       margin-bottom: 12px;
     }
     .modal-box textarea {
       width: 100%;
       min-height: 80px;
-      font-family: Caveat, cursive;
-      font-size: 20px;
+      font-family: Inter, sans-serif;
+      font-size: 14px;
       color: var(--text-mid);
       border: 1px solid var(--border-strong);
       border-radius: 6px;
@@ -685,7 +704,7 @@
 
     /* Responsive */
     @media (max-width: 640px) {
-      body { padding: 64px 10px 30px; }
+      body { padding: 64px 8px 30px; }
       .top-bar { padding: 14px 16px; gap: 10px; }
       .top-bar h1 { font-size: 21px; }
       .top-bar .date { font-size: 11px; }
@@ -694,8 +713,12 @@
       .columns { grid-template-columns: 1fr; }
       .column:first-child { border-right: none; border-bottom: 1px solid var(--border); }
       .column:first-child .zone:first-child { border-top: none; }
-      .column:last-child .zone:first-child { border-top: 1px solid var(--border); }
-      .zone { padding: 16px 18px; }
+      .column:last-child .zone:first-child { border-top: none; }
+      .zone { padding: 32px 24px; }
+    }
+    @media (max-width: 400px) {
+      .top-bar { flex-wrap: wrap; padding-bottom: 8px; }
+      .top-bar .date { width: 100%; text-align: center; margin-left: 0; order: 3; }
     }
 
     /* ── Auth screen ─────────────────────────────────────────────── */
@@ -880,15 +903,18 @@
         <div class="theme-swatch" data-theme="lavender" style="background:#e2dde8" title="Lavender"></div>
       </div>
     </div>
-    <div class="sidebar-footer" style="flex-direction:column; gap:10px;">
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Account</div>
+      <div style="display:flex; gap:8px; margin-bottom:8px;">
+        <button class="sidebar-btn" id="exportBtn" style="flex:1;">Export</button>
+        <button class="sidebar-btn" id="importBtn" style="flex:1;">Import</button>
+      </div>
+      <button class="sidebar-btn" id="logoutBtn" style="width:100%;">Sign out</button>
+    </div>
+    <div class="sidebar-footer">
       <div style="display:flex; align-items:center; justify-content:space-between; width:100%;">
         <div style="font-size:12px; color:var(--text-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;" id="sidebarUserEmail"></div>
         <div class="auth-sync-badge" id="syncBadge"><div class="sync-dot"></div> Saving…</div>
-        <button id="logoutBtn" style="background:none;border:none;font-size:12px;color:var(--text-faint);cursor:pointer;font-family:Inter,sans-serif;padding:0;flex-shrink:0;margin-left:8px;">Sign out</button>
-      </div>
-      <div style="display:flex;gap:8px;width:100%;">
-        <button id="exportBtn" style="flex:1;">Export</button>
-        <button id="importBtn" style="flex:1;">Import</button>
       </div>
     </div>
     <input type="file" id="importFile" accept=".json" style="display:none">
@@ -1090,7 +1116,9 @@
     }
     function formatShortDate(key) {
       const d = new Date(key + 'T12:00:00');
-      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const day = d.getDate();
+      const month = d.toLocaleDateString('en-US', { month: 'short' });
+      return `${day} ${month}`;
     }
     function formatWeekday(key) {
       return new Date(key + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long' });
@@ -1144,19 +1172,8 @@
       const keys = Object.keys(lists).sort((a, b) => b.localeCompare(a));
 
       container.innerHTML = keys.map(key => {
-        const state = lists[key];
-        const allTasks = Object.values(state).flatMap(z => (z && z.tasks) || []);
-        const remaining = allTasks.filter(t => !t.done && t.text && t.text.trim() !== '');
-        const preview = remaining.length === 0
-          ? (allTasks.length === 0 ? 'Empty list' : 'All done!')
-          : remaining.slice(0, 2).map(t => t.text).filter(Boolean).join(', ') || 'Empty list';
-
         return `<div class="sidebar-list-item${key === activeKey ? ' active' : ''}" data-key="${key}">
-          <div>
-            <div class="list-date">${formatShortDate(key)}</div>
-            <div class="list-weekday">${formatWeekday(key)}</div>
-            <div class="list-preview">${escapeHtml(preview)}</div>
-          </div>
+          <div class="list-date">${formatShortDate(key)} · ${formatWeekday(key)}</div>
           <button class="delete-list-btn" data-key="${key}" title="Delete list">×</button>
         </div>`;
       }).join('');
