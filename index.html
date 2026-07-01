@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -693,6 +694,17 @@
       transform: translateX(-50%) translateY(0);
     }
 
+    /* Lucide icon sizing */
+    .lucide { display: inline-block; vertical-align: middle; stroke-width: 1.75; }
+    .task-item .lucide { width: 14px; height: 14px; }
+    .drag-handle .lucide { width: 13px; height: 13px; color: var(--text-faintest); }
+    .icon-btn .lucide { width: 15px; height: 15px; }
+    .list-edit-date-btn { background: none; border: none; cursor: pointer; color: var(--text-faintest); padding: 0 2px; opacity: 0; transition: opacity 0.15s; line-height: 1; }
+    .list-edit-date-btn .lucide { width: 11px; height: 11px; }
+    .sidebar-list-item:hover .list-edit-date-btn { opacity: 1; }
+    .list-edit-date-btn:hover { color: var(--text-mid); }
+    .delete-list-btn .lucide { width: 14px; height: 14px; }
+
     /* Confetti */
     .confetti-piece {
       position: fixed;
@@ -972,8 +984,8 @@
     <div class="quote-box" id="quoteBox">
       <div class="quote-banner-text" id="quoteBannerText"></div>
       <div class="quote-actions">
-        <button class="icon-btn" id="editQuoteBtn" title="Edit quote">✎</button>
-        <button class="icon-btn" id="deleteQuoteBtn" title="Delete quote">🗑</button>
+        <button class="icon-btn" id="editQuoteBtn" title="Edit quote"><i data-lucide="pencil"></i></button>
+        <button class="icon-btn" id="deleteQuoteBtn" title="Delete quote"><i data-lucide="trash-2"></i></button>
       </div>
     </div>
     <button class="add-quote-btn" id="addQuoteBtn">+ Add quote of the day</button>
@@ -1069,14 +1081,20 @@
     function getActiveKey() { return localStorage.getItem('burner-active') || todayKey(); }
     function setActiveKey(key) { localStorage.setItem('burner-active', key); }
     function todayKey() { return new Date().toISOString().slice(0, 10); }
-    function makeDefaultState() {
+    function makeDefaultState(date) {
       return {
+        date: date || todayKey(),
         'front-burner': { name: '', tasks: [] },
         'back-burner':  { name: '', tasks: [] },
         'kitchen-sink': { name: '', tasks: [] },
         unscheduled: [],
         quote: ''
       };
+    }
+    function newListKey() {
+      return typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : Date.now().toString();
     }
     function saveState() {
       const lists = getAllLists();
@@ -1123,8 +1141,13 @@
     function formatWeekday(key) {
       return new Date(key + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long' });
     }
+    function getListDate(key) {
+      const lists = getAllLists();
+      const state = lists[key];
+      return (state && state.date) || (key.length === 10 ? key : todayKey());
+    }
     function updateDateDisplay() {
-      document.getElementById('dateDisplay').textContent = formatDateKey(getActiveKey());
+      document.getElementById('dateDisplay').textContent = formatDateKey(getListDate(getActiveKey()));
     }
 
     // ── Reschedule bar ────────────────────────────────────────────────
@@ -1169,22 +1192,55 @@
       const lists = getAllLists();
       const activeKey = getActiveKey();
       const container = document.getElementById('sidebarLists');
-      const keys = Object.keys(lists).sort((a, b) => b.localeCompare(a));
+      const keys = Object.keys(lists).sort((a, b) => {
+        const da = (lists[a] && lists[a].date) || (a.length === 10 ? a : '0');
+        const db = (lists[b] && lists[b].date) || (b.length === 10 ? b : '0');
+        return db.localeCompare(da);
+      });
 
       container.innerHTML = keys.map(key => {
+        const dateVal = getListDate(key);
         return `<div class="sidebar-list-item${key === activeKey ? ' active' : ''}" data-key="${key}">
-          <div class="list-date">${formatShortDate(key)} · ${formatWeekday(key)}</div>
-          <button class="delete-list-btn" data-key="${key}" title="Delete list">×</button>
+          <div style="flex:1;min-width:0;">
+            <div class="list-date" style="display:flex;align-items:center;gap:4px;">
+              <span>${formatShortDate(dateVal)} · ${formatWeekday(dateVal)}</span>
+              <button class="list-edit-date-btn" data-key="${key}" title="Change date"><i data-lucide="calendar"></i></button>
+              <input type="date" class="list-date-picker" data-key="${key}" value="${dateVal}" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;">
+            </div>
+          </div>
+          <button class="delete-list-btn" data-key="${key}" title="Delete list"><i data-lucide="x"></i></button>
         </div>`;
       }).join('');
 
+      if (window.lucide) lucide.createIcons({ el: container });
+
       container.querySelectorAll('.sidebar-list-item').forEach(item => {
         item.addEventListener('click', e => {
-          if (e.target.classList.contains('delete-list-btn')) return;
+          if (e.target.closest('.delete-list-btn') || e.target.closest('.list-edit-date-btn')) return;
           const key = item.dataset.key;
           setActiveKey(key);
           render();
           toggleSidebar(false);
+        });
+      });
+      container.querySelectorAll('.list-edit-date-btn').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          const key = btn.dataset.key;
+          const picker = container.querySelector(`.list-date-picker[data-key="${key}"]`);
+          if (picker) { picker.style.pointerEvents = 'auto'; picker.showPicker ? picker.showPicker() : picker.click(); }
+        });
+      });
+      container.querySelectorAll('.list-date-picker').forEach(input => {
+        input.addEventListener('change', e => {
+          e.stopPropagation();
+          const key = input.dataset.key;
+          const newDate = input.value;
+          if (!newDate) return;
+          const ls = getAllLists();
+          if (ls[key]) { ls[key].date = newDate; saveAllLists(ls); }
+          if (key === getActiveKey()) updateDateDisplay();
+          renderSidebar();
         });
       });
       container.querySelectorAll('.delete-list-btn').forEach(btn => {
@@ -1193,12 +1249,13 @@
           const key = btn.dataset.key;
           deleteListKey(key);
           if (key === getActiveKey()) {
-            const remaining = Object.keys(lists).sort((a,b) => b.localeCompare(a));
+            const remaining = Object.keys(getAllLists()).sort((a,b) => {
+              const da = getListDate(a), db = getListDate(b);
+              return db.localeCompare(da);
+            });
             setActiveKey(remaining[0] || todayKey());
-            if (!lists[getActiveKey()]) {
-              const ls = getAllLists();
-              ls[getActiveKey()] = makeDefaultState();
-              saveAllLists(ls);
+            if (!getAllLists()[getActiveKey()]) {
+              const ls = getAllLists(); ls[getActiveKey()] = makeDefaultState(); saveAllLists(ls);
             }
             render();
           } else {
@@ -1235,7 +1292,7 @@
 
       const handle = document.createElement('span');
       handle.className = 'drag-handle';
-      handle.textContent = '⠿';
+      handle.innerHTML = '<i data-lucide="grip-vertical"></i>';
       handle.setAttribute('aria-hidden', 'true');
 
       const cb = document.createElement('input');
@@ -1251,7 +1308,7 @@
       const postponeBtn = document.createElement('button');
       postponeBtn.className = 'postpone-btn';
       postponeBtn.title = 'Postpone';
-      postponeBtn.innerHTML = '&#128197;'; // 📅
+      postponeBtn.innerHTML = '<i data-lucide="calendar"></i>';
 
       const postponeMenu = document.createElement('div');
       postponeMenu.className = 'postpone-menu';
@@ -1289,7 +1346,7 @@
       const del = document.createElement('button');
       del.className = 'delete-btn';
       del.title = 'Delete';
-      del.textContent = '×';
+      del.innerHTML = '<i data-lucide="x"></i>';
 
       li.append(handle, cb, text, postponeBtn, postponeMenu, del);
 
@@ -1349,6 +1406,7 @@
       }
       const li = createTaskItem(zone, { text, done }, list.children.length);
       list.appendChild(li);
+      if (window.lucide) lucide.createIcons({ el: li });
       if (focus) {
         li.querySelector('.task-text').focus();
       }
@@ -1513,6 +1571,7 @@
       renderQuote(state.quote || '');
       updateRescheduleBar();
       renderSidebar();
+      if (window.lucide) lucide.createIcons();
     }
 
     // ── Toast ─────────────────────────────────────────────────────────
@@ -1527,14 +1586,11 @@
     document.getElementById('hamburgerBtn').addEventListener('click', () => toggleSidebar());
     document.getElementById('sidebarOverlay').addEventListener('click', () => toggleSidebar(false));
     document.getElementById('newListBtn').addEventListener('click', () => {
-      const key = todayKey();
+      const key = newListKey();
       const lists = getAllLists();
-      let newKey = key;
-      if (!lists[newKey]) {
-        lists[newKey] = makeDefaultState();
-        saveAllLists(lists);
-      }
-      setActiveKey(newKey);
+      lists[key] = makeDefaultState();
+      saveAllLists(lists);
+      setActiveKey(key);
       render();
       toggleSidebar(false);
     });
@@ -1695,7 +1751,7 @@
       if (_authMode === 'signup') errEl.textContent = 'Check your email to confirm your account.';
     });
     document.getElementById('googleAuthBtn').addEventListener('click', async () => {
-      await _sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.href } });
+      await _sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
     });
     document.getElementById('logoutBtn').addEventListener('click', async () => {
       await _sb.auth.signOut();
@@ -1707,18 +1763,18 @@
 
     // ── Init ──────────────────────────────────────────────────────────
     applyTheme(getTheme());
-    (async () => {
-      const { data: { session } } = await _sb.auth.getSession();
-      if (session) {
+    if (window.lucide) lucide.createIcons();
+    _sb.auth.onAuthStateChange(async (event, session) => {
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
         await onSignedIn(session.user);
-      } else {
+      } else if (event === 'INITIAL_SESSION' && !session) {
+        showAuthOverlay();
+      } else if (event === 'SIGNED_OUT') {
+        _currentUser = null;
+        _listsCache = {};
         showAuthOverlay();
       }
-      _sb.auth.onAuthStateChange(async (event, session) => {
-        if (event === 'SIGNED_IN' && session) await onSignedIn(session.user);
-        if (event === 'SIGNED_OUT') { _currentUser = null; showAuthOverlay(); }
-      });
-    })();
+    });
   </script>
 </body>
 </html>
