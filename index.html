@@ -1778,10 +1778,15 @@
     // ── Init ──────────────────────────────────────────────────────────
     applyTheme(getTheme());
     if (window.lucide) lucide.createIcons();
+
+    let _initialSessionHandled = false;
     _sb.auth.onAuthStateChange(async (event, session) => {
+      console.log('[auth]', event, session ? session.user.email : 'no session');
       if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
+        _initialSessionHandled = true;
         await onSignedIn(session.user);
       } else if (event === 'INITIAL_SESSION' && !session) {
+        _initialSessionHandled = true;
         showAuthOverlay();
       } else if (event === 'SIGNED_OUT') {
         _currentUser = null;
@@ -1789,6 +1794,19 @@
         showAuthOverlay();
       }
     });
+
+    // Fallback: if onAuthStateChange doesn't fire INITIAL_SESSION (can happen
+    // with publishable key format), manually check for an existing session.
+    setTimeout(async () => {
+      if (_initialSessionHandled) return;
+      console.log('[auth] INITIAL_SESSION not fired — checking session manually');
+      const { data: { session } } = await _sb.auth.getSession();
+      if (session) {
+        await onSignedIn(session.user);
+      } else {
+        showAuthOverlay();
+      }
+    }, 2000);
   </script>
 </body>
 </html>
