@@ -1706,18 +1706,30 @@
       const emailEl = document.getElementById('sidebarUserEmail');
       if (emailEl) emailEl.textContent = user.email;
       hideAuthOverlay();
-      _listsCache = await _loadAllLists();
-      // Fall back to local backup if Supabase returned nothing
-      if (Object.keys(_listsCache).length === 0) {
-        try {
-          const local = JSON.parse(localStorage.getItem('burner-lists-local') || 'null');
-          if (local && Object.keys(local).length > 0) {
-            _listsCache = local;
-            Object.keys(_listsCache).forEach(k => _dirtyKeys.add(k));
-            _scheduleSync();
-          }
-        } catch(e) {}
+
+      // Show local data immediately so the user never sees a blank app
+      try {
+        const local = JSON.parse(localStorage.getItem('burner-lists-local') || 'null');
+        if (local && Object.keys(local).length > 0) {
+          _listsCache = local;
+          const key = todayKey();
+          if (!_listsCache[key]) _listsCache[key] = makeDefaultState();
+          if (!getActiveKey() || !_listsCache[getActiveKey()]) setActiveKey(key);
+          bindZoneDropTargets();
+          render();
+        }
+      } catch(e) {}
+
+      // Then load from Supabase and merge (Supabase wins on conflict)
+      const remote = await _loadAllLists();
+      if (Object.keys(remote).length > 0) {
+        _listsCache = { ..._listsCache, ...remote };
+      } else if (Object.keys(_listsCache).length > 0) {
+        // Supabase empty but we have local data — push it up
+        Object.keys(_listsCache).forEach(k => _dirtyKeys.add(k));
+        _scheduleSync();
       }
+
       const key = todayKey();
       if (!_listsCache[key]) {
         _listsCache[key] = makeDefaultState();
