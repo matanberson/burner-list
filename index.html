@@ -1073,7 +1073,8 @@
       if (!_currentUser) return {};
       const { data, error } = await _sb.from('burner_lists')
         .select('date_key, state').eq('user_id', _currentUser.id);
-      if (error) { console.error(error); return {}; }
+      if (error) { console.error('Load error:', error); showToast('⚠️ Load failed: ' + error.message); return {}; }
+      console.log('Loaded from Supabase:', data.length, 'rows');
       const result = {};
       data.forEach(r => { result[r.date_key] = r.state; });
       return result;
