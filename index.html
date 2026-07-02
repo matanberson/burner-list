@@ -1023,6 +1023,7 @@
 
     function saveAllLists(lists) {
       _listsCache = lists;
+      try { localStorage.setItem('burner-lists-local', JSON.stringify(lists)); } catch(e) {}
       Object.keys(lists).forEach(k => _dirtyKeys.add(k));
       _scheduleSync();
     }
@@ -1061,7 +1062,7 @@
         if (rows.length) {
           const { error } = await _sb.from('burner_lists')
             .upsert(rows, { onConflict: 'user_id,date_key' });
-          if (error) { keys.forEach(k => _dirtyKeys.add(k)); console.error(error); }
+          if (error) { keys.forEach(k => _dirtyKeys.add(k)); console.error(error); showToast('⚠️ Sync failed: ' + error.message); }
         }
       }
 
@@ -1705,6 +1706,17 @@
       if (emailEl) emailEl.textContent = user.email;
       hideAuthOverlay();
       _listsCache = await _loadAllLists();
+      // Fall back to local backup if Supabase returned nothing
+      if (Object.keys(_listsCache).length === 0) {
+        try {
+          const local = JSON.parse(localStorage.getItem('burner-lists-local') || 'null');
+          if (local && Object.keys(local).length > 0) {
+            _listsCache = local;
+            Object.keys(_listsCache).forEach(k => _dirtyKeys.add(k));
+            _scheduleSync();
+          }
+        } catch(e) {}
+      }
       const key = todayKey();
       if (!_listsCache[key]) {
         _listsCache[key] = makeDefaultState();
