@@ -1767,12 +1767,12 @@
     document.getElementById('googleAuthBtn').addEventListener('click', async () => {
       await _sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
     });
-    document.getElementById('logoutBtn').addEventListener('click', async () => {
-      await _sb.auth.signOut();
+    document.getElementById('logoutBtn').addEventListener('click', () => {
       _currentUser = null;
       _listsCache = {};
       toggleSidebar(false);
       showAuthOverlay();
+      _sb.auth.signOut().catch(e => console.warn('signOut error:', e));
     });
 
     // ── Init ──────────────────────────────────────────────────────────
