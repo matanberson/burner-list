@@ -1071,10 +1071,13 @@
 
     async function _loadAllLists() {
       if (!_currentUser) return {};
+      // Ensure the auth token is valid/refreshed before querying
+      const { data: { session } } = await _sb.auth.getSession();
+      if (!session) { console.error('[load] no valid session'); return {}; }
       const { data, error } = await _sb.from('burner_lists')
-        .select('date_key, state').eq('user_id', _currentUser.id);
+        .select('date_key, state').eq('user_id', session.user.id);
       if (error) { console.error('Load error:', error); showToast('⚠️ Load failed: ' + error.message); return {}; }
-      console.log('Loaded from Supabase:', data.length, 'rows');
+      console.log('[load] Loaded', data.length, 'rows from Supabase');
       const result = {};
       data.forEach(r => { result[r.date_key] = r.state; });
       return result;
