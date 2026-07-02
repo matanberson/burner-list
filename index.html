@@ -1699,6 +1699,7 @@
     }
 
     async function onSignedIn(user) {
+      if (_currentUser && _currentUser.id === user.id) return;
       _currentUser = user;
       const emailEl = document.getElementById('sidebarUserEmail');
       if (emailEl) emailEl.textContent = user.email;
