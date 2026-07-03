@@ -2,8 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Burner List</title>
+  <meta name="theme-color" content="#fffdf7">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Burner List">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/assets/icons/icon-180.png">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍳</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -90,7 +96,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 70px 20px 40px;
+      padding: calc(70px + env(safe-area-inset-top, 0px)) max(20px, env(safe-area-inset-right, 0px)) calc(40px + env(safe-area-inset-bottom, 0px)) max(20px, env(safe-area-inset-left, 0px));
       transition: background 0.4s;
     }
 
@@ -99,7 +105,7 @@
     /* Top bar: hamburger + title + date in one line */
     .top-bar {
       position: fixed;
-      top: 0;
+      top: env(safe-area-inset-top, 0px);
       left: 0;
       right: 0;
       z-index: 120;
@@ -109,6 +115,18 @@
       padding: 16px 40px;
       background: var(--paper);
       transition: background 0.4s;
+    }
+
+    @supports (padding-top: env(safe-area-inset-top)) {
+      .top-bar::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: env(safe-area-inset-top);
+        background: var(--paper);
+      }
     }
 
     .hamburger {
@@ -725,7 +743,7 @@
 
     /* Responsive */
     @media (max-width: 640px) {
-      body { padding: 64px 8px 30px; }
+      body { padding: calc(64px + env(safe-area-inset-top, 0px)) max(8px, env(safe-area-inset-right, 0px)) calc(30px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)); }
       .top-bar { padding: 14px 16px; gap: 10px; }
       .top-bar h1 { font-size: 21px; }
       .top-bar .date { font-size: 11px; }
@@ -2087,6 +2105,13 @@
     applyTheme(getTheme());
     if (window.lucide) lucide.createIcons();
     setInterval(ensureRemoteSync, 5000);
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => reg.update())
+          .catch(err => console.warn('[pwa] service worker registration failed:', err));
+      });
+    }
 
     let _initialSessionHandled = false;
     _sb.auth.onAuthStateChange(async (event, session) => {
