@@ -1234,17 +1234,27 @@
       document.addEventListener('visibilitychange', handleVisibilityRefresh);
     }
 
-    window.burnerDebug = () => ({
-      build: 'sync-debug-2026-07-03',
-      userId: _currentUser && _currentUser.id,
-      activeKey: getActiveKey(),
-      activeDate: getStateDate(getActiveKey(), _listsCache[getActiveKey()]),
-      listKeys: Object.keys(_listsCache),
-      dirtyKeys: [..._dirtyKeys],
-      deletedKeys: [..._deletedKeys],
-      hasRemotePoll: Boolean(_remotePollTimer),
-      hasRealtimeChannel: Boolean(_remoteChannel)
-    });
+    function ensureRemoteSync() {
+      if (!_currentUser || _remotePollTimer) return;
+      console.warn('[sync] remote sync was not running; restarting');
+      startRemoteSync();
+      refreshFromRemote();
+    }
+
+    window.burnerDebug = () => {
+      ensureRemoteSync();
+      return {
+        build: 'sync-debug-2026-07-03b',
+        userId: _currentUser && _currentUser.id,
+        activeKey: getActiveKey(),
+        activeDate: getStateDate(getActiveKey(), _listsCache[getActiveKey()]),
+        listKeys: Object.keys(_listsCache),
+        dirtyKeys: [..._dirtyKeys],
+        deletedKeys: [..._deletedKeys],
+        hasRemotePoll: Boolean(_remotePollTimer),
+        hasRealtimeChannel: Boolean(_remoteChannel)
+      };
+    };
 
     function getActiveKey() { return localStorage.getItem('burner-active') || todayKey(); }
     function setActiveKey(key) { localStorage.setItem('burner-active', key); }
@@ -1868,7 +1878,10 @@
     }
 
     async function onSignedIn(user) {
-      if (_currentUser && _currentUser.id === user.id) return;
+      if (_currentUser && _currentUser.id === user.id) {
+        ensureRemoteSync();
+        return;
+      }
       _currentUser = user;
       const emailEl = document.getElementById('sidebarUserEmail');
       if (emailEl) emailEl.textContent = user.email;
@@ -1960,6 +1973,7 @@
     // ── Init ──────────────────────────────────────────────────────────
     applyTheme(getTheme());
     if (window.lucide) lucide.createIcons();
+    setInterval(ensureRemoteSync, 5000);
 
     let _initialSessionHandled = false;
     _sb.auth.onAuthStateChange(async (event, session) => {
