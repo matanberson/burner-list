@@ -1017,13 +1017,20 @@
     let _dirtyKeys   = new Set();
     let _deletedKeys = new Set();
     let _syncTimer   = null;
+    let _remoteChannel = null;
+    let _remotePollTimer = null;
+    const REMOTE_POLL_MS = 10000;
 
     // ── Storage helpers ───────────────────────────────────────────────
     function getAllLists() { return _listsCache; }
 
+    function persistLocalLists(lists) {
+      try { localStorage.setItem('burner-lists-local', JSON.stringify(lists)); } catch(e) {}
+    }
+
     function saveAllLists(lists) {
       _listsCache = lists;
-      try { localStorage.setItem('burner-lists-local', JSON.stringify(lists)); } catch(e) {}
+      persistLocalLists(lists);
       Object.keys(lists).forEach(k => _dirtyKeys.add(k));
       _scheduleSync();
     }
@@ -1048,9 +1055,14 @@
       if (_deletedKeys.size > 0) {
         const toDelete = [..._deletedKeys];
         _deletedKeys.clear();
-        await _sb.from('burner_lists').delete()
+        const { error } = await _sb.from('burner_lists').delete()
           .eq('user_id', _currentUser.id)
           .in('date_key', toDelete);
+        if (error) {
+          toDelete.forEach(k => _deletedKeys.add(k));
+          console.error(error);
+          showToast('⚠️ Sync failed: ' + error.message);
+        }
       }
 
       if (_dirtyKeys.size > 0) {
@@ -1081,6 +1093,116 @@
       const result = {};
       data.forEach(r => { result[r.date_key] = r.state; });
       return result;
+    }
+
+    function statesEqual(a, b) {
+      return JSON.stringify(a || null) === JSON.stringify(b || null);
+    }
+
+    function normalizeActiveKey() {
+      const activeKey = getActiveKey();
+      if (_listsCache[activeKey]) return;
+      const keys = Object.keys(_listsCache).sort((a, b) => {
+        const da = (_listsCache[a] && _listsCache[a].date) || (a.length === 10 ? a : '0');
+        const db = (_listsCache[b] && _listsCache[b].date) || (b.length === 10 ? b : '0');
+        return db.localeCompare(da);
+      });
+      setActiveKey(keys[0] || todayKey());
+    }
+
+    function applyRemoteSnapshot(remote) {
+      let changed = false;
+      const merged = {};
+
+      Object.keys(remote).forEach(key => {
+        if (!_deletedKeys.has(key)) merged[key] = remote[key];
+      });
+
+      Object.keys(_listsCache).forEach(key => {
+        if (_dirtyKeys.has(key)) {
+          merged[key] = _listsCache[key];
+          return;
+        }
+        if (_deletedKeys.has(key)) return;
+        if (!remote[key]) changed = true;
+      });
+
+      Object.keys(merged).forEach(key => {
+        if (!statesEqual(_listsCache[key], merged[key])) changed = true;
+      });
+
+      if (!changed) return false;
+      _listsCache = merged;
+      normalizeActiveKey();
+      persistLocalLists(_listsCache);
+      render();
+      return true;
+    }
+
+    async function refreshFromRemote() {
+      if (!_currentUser) return;
+      const remote = await _loadAllLists();
+      applyRemoteSnapshot(remote);
+    }
+
+    function applyRemoteUpsert(row) {
+      if (!_currentUser) return;
+      if (!row || row.user_id !== _currentUser.id) return;
+      const key = row.date_key;
+      if (_dirtyKeys.has(key) || _deletedKeys.has(key)) return;
+      if (statesEqual(_listsCache[key], row.state)) return;
+      _listsCache = { ..._listsCache, [key]: row.state };
+      normalizeActiveKey();
+      persistLocalLists(_listsCache);
+      render();
+    }
+
+    function applyRemoteDelete(row) {
+      if (!_currentUser) return;
+      if (!row || row.user_id !== _currentUser.id) return;
+      const key = row.date_key;
+      if (_dirtyKeys.has(key) || _deletedKeys.has(key) || !_listsCache[key]) return;
+      const next = { ..._listsCache };
+      delete next[key];
+      _listsCache = next;
+      normalizeActiveKey();
+      persistLocalLists(_listsCache);
+      render();
+    }
+
+    function handleVisibilityRefresh() {
+      if (document.visibilityState === 'visible') refreshFromRemote();
+    }
+
+    function stopRemoteSync() {
+      if (_remoteChannel) {
+        _sb.removeChannel(_remoteChannel);
+        _remoteChannel = null;
+      }
+      if (_remotePollTimer) {
+        clearInterval(_remotePollTimer);
+        _remotePollTimer = null;
+      }
+      document.removeEventListener('visibilitychange', handleVisibilityRefresh);
+    }
+
+    function startRemoteSync() {
+      if (!_currentUser) return;
+      stopRemoteSync();
+      _remoteChannel = _sb
+        .channel(`burner-lists-${_currentUser.id}`)
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'burner_lists', filter: `user_id=eq.${_currentUser.id}` },
+          payload => {
+            if (payload.eventType === 'DELETE') applyRemoteDelete(payload.old);
+            else applyRemoteUpsert(payload.new);
+          }
+        )
+        .subscribe(status => console.log('[realtime]', status));
+
+      _remotePollTimer = setInterval(refreshFromRemote, REMOTE_POLL_MS);
+      document.addEventListener('visibilitychange', handleVisibilityRefresh);
     }
 
     function getActiveKey() { return localStorage.getItem('burner-active') || todayKey(); }
@@ -1741,6 +1863,7 @@
       if (!getActiveKey() || !_listsCache[getActiveKey()]) setActiveKey(key);
       bindZoneDropTargets();
       render();
+      startRemoteSync();
     }
 
     // ── Auth UI bindings ──────────────────────────────────────────────
@@ -1783,6 +1906,7 @@
       await _sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
     });
     document.getElementById('logoutBtn').addEventListener('click', () => {
+      stopRemoteSync();
       _currentUser = null;
       _listsCache = {};
       toggleSidebar(false);
@@ -1804,6 +1928,7 @@
         _initialSessionHandled = true;
         showAuthOverlay();
       } else if (event === 'SIGNED_OUT') {
+        stopRemoteSync();
         _currentUser = null;
         _listsCache = {};
         showAuthOverlay();
