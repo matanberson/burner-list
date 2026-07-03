@@ -1110,6 +1110,31 @@
       setActiveKey(keys[0] || todayKey());
     }
 
+    function getStateDate(key, state) {
+      return (state && state.date) || (key && key.length === 10 ? key : todayKey());
+    }
+
+    function isEmptyState(state) {
+      if (!state) return true;
+      if (state.quote && state.quote.trim()) return false;
+      if (state.unscheduled && state.unscheduled.some(t => t.text && t.text.trim())) return false;
+      return ['front-burner', 'back-burner', 'kitchen-sink'].every(zone => {
+        const zoneState = state[zone] || {};
+        if (zoneState.name && zoneState.name.trim()) return false;
+        return !(zoneState.tasks || []).some(t => t.text && t.text.trim());
+      });
+    }
+
+    function preferRemoteActiveForSameDate(remoteKey, remoteState) {
+      const activeKey = getActiveKey();
+      if (activeKey === remoteKey || _dirtyKeys.has(activeKey) || _deletedKeys.has(activeKey)) return;
+      const activeState = _listsCache[activeKey];
+      if (!activeState || !isEmptyState(activeState) || isEmptyState(remoteState)) return;
+      if (getStateDate(activeKey, activeState) === getStateDate(remoteKey, remoteState)) {
+        setActiveKey(remoteKey);
+      }
+    }
+
     function applyRemoteSnapshot(remote) {
       let changed = false;
       const merged = {};
@@ -1133,6 +1158,7 @@
 
       if (!changed) return false;
       _listsCache = merged;
+      Object.keys(remote).forEach(key => preferRemoteActiveForSameDate(key, remote[key]));
       normalizeActiveKey();
       persistLocalLists(_listsCache);
       render();
@@ -1153,6 +1179,7 @@
       if (_dirtyKeys.has(key) || _deletedKeys.has(key)) return;
       if (statesEqual(_listsCache[key], row.state)) return;
       _listsCache = { ..._listsCache, [key]: row.state };
+      preferRemoteActiveForSameDate(key, row.state);
       normalizeActiveKey();
       persistLocalLists(_listsCache);
       render();
