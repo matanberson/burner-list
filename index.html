@@ -653,11 +653,18 @@
       outline: none;
       resize: vertical;
     }
+    .modal-body {
+      font-size: 14px;
+      color: var(--text-mid);
+      line-height: 1.45;
+      margin-bottom: 14px;
+    }
     .modal-actions {
       display: flex;
       justify-content: flex-end;
       gap: 8px;
       margin-top: 14px;
+      flex-wrap: wrap;
     }
     .modal-actions button {
       border: none;
@@ -671,6 +678,8 @@
     .modal-cancel-btn:hover { background: var(--hover-tint); }
     .modal-save-btn { background: var(--text-mid); color: #fff; }
     .modal-save-btn:hover { opacity: 0.88; }
+    .modal-secondary-btn { background: var(--hover-tint); color: var(--text-mid); border: 1px solid var(--border) !important; }
+    .modal-secondary-btn:hover { background: var(--hover-tint-strong); }
 
     /* Toast */
     .toast {
@@ -999,6 +1008,19 @@
       <div class="modal-actions">
         <button class="modal-cancel-btn" id="quoteModalCancel">Cancel</button>
         <button class="modal-save-btn" id="quoteModalSave">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Paste mode modal -->
+  <div class="modal-overlay" id="pasteModalOverlay">
+    <div class="modal-box">
+      <h3>Paste tasks</h3>
+      <div class="modal-body" id="pasteModalBody"></div>
+      <div class="modal-actions">
+        <button class="modal-cancel-btn" id="pasteModalCancel">Cancel</button>
+        <button class="modal-secondary-btn" id="pasteSingleBtn">Single task</button>
+        <button class="modal-save-btn" id="pasteMultipleBtn">Multiple tasks</button>
       </div>
     </div>
   </div>
@@ -1463,10 +1485,77 @@
 
     function removeIfEmpty(li) {
       const text = li.querySelector('.task-text');
+      if (pendingPaste && pendingPaste.input === text) return;
       if (text.value.trim() === '' && li.isConnected) {
         li.remove();
         saveState();
       }
+    }
+
+    let pendingPaste = null;
+
+    function insertTextAtCursor(input, value) {
+      const start = input.selectionStart ?? input.value.length;
+      const end = input.selectionEnd ?? input.value.length;
+      input.value = input.value.slice(0, start) + value + input.value.slice(end);
+      const cursor = start + value.length;
+      input.setSelectionRange(cursor, cursor);
+    }
+
+    function getPasteLines(text) {
+      return text
+        .replace(/\r\n/g, '\n')
+        .replace(/\r/g, '\n')
+        .split('\n')
+        .map(line => line.trim())
+        .filter(Boolean);
+    }
+
+    function openPasteModal(input, text) {
+      const lines = getPasteLines(text);
+      if (lines.length < 2) return false;
+      pendingPaste = { input, text, lines };
+      document.getElementById('pasteModalBody').textContent =
+        `This paste has ${lines.length} lines. Add each line as its own task, or keep everything in one task?`;
+      document.getElementById('pasteModalOverlay').classList.add('visible');
+      document.getElementById('pasteMultipleBtn').focus();
+      return true;
+    }
+
+    function closePasteModal() {
+      pendingPaste = null;
+      document.getElementById('pasteModalOverlay').classList.remove('visible');
+    }
+
+    function pasteAsSingleTask() {
+      if (!pendingPaste) return;
+      const { input, lines } = pendingPaste;
+      insertTextAtCursor(input, lines.join(' '));
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      closePasteModal();
+    }
+
+    function pasteAsMultipleTasks() {
+      if (!pendingPaste) return;
+      const { input, lines } = pendingPaste;
+      const li = input.closest('.task-item');
+      const list = input.closest('.task-list');
+      if (!li || !list) { closePasteModal(); return; }
+      const zone = li.dataset.zone;
+      let insertAfter = li;
+      const linesToAdd = [...lines];
+      if (input.value.trim() === '') {
+        input.value = linesToAdd.shift() || '';
+      }
+      linesToAdd.forEach(line => {
+        const newLi = createTaskItem(zone, { text: line, done: false }, list.children.length);
+        list.insertBefore(newLi, insertAfter.nextSibling);
+        insertAfter = newLi;
+        if (window.lucide) lucide.createIcons({ el: newLi });
+      });
+      saveState();
+      closePasteModal();
+      showToast(`${lines.length} tasks pasted`);
     }
 
     function createTaskItem(zone, task, index) {
@@ -1553,6 +1642,10 @@
         saveState();
       });
       text.addEventListener('input', () => saveState());
+      text.addEventListener('paste', e => {
+        const pasted = e.clipboardData && e.clipboardData.getData('text');
+        if (pasted && openPasteModal(text, pasted)) e.preventDefault();
+      });
       text.addEventListener('blur', () => removeIfEmpty(li));
       text.addEventListener('keydown', e => {
         if (e.key === 'Enter') {
@@ -1798,6 +1891,14 @@
     document.getElementById('quoteModalSave').addEventListener('click', saveQuote);
     document.getElementById('quoteModalOverlay').addEventListener('click', e => {
       if (e.target.id === 'quoteModalOverlay') closeQuoteModal();
+    });
+
+    // Paste mode bindings
+    document.getElementById('pasteModalCancel').addEventListener('click', closePasteModal);
+    document.getElementById('pasteSingleBtn').addEventListener('click', pasteAsSingleTask);
+    document.getElementById('pasteMultipleBtn').addEventListener('click', pasteAsMultipleTasks);
+    document.getElementById('pasteModalOverlay').addEventListener('click', e => {
+      if (e.target.id === 'pasteModalOverlay') closePasteModal();
     });
 
     // Close postpone menus when clicking outside
