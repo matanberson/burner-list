@@ -1037,6 +1037,7 @@
 
     function deleteListKey(key) {
       delete _listsCache[key];
+      persistLocalLists(_listsCache);
       _dirtyKeys.delete(key);
       _deletedKeys.add(key);
       _scheduleSync();
@@ -1233,6 +1234,18 @@
       document.addEventListener('visibilitychange', handleVisibilityRefresh);
     }
 
+    window.burnerDebug = () => ({
+      build: 'sync-debug-2026-07-03',
+      userId: _currentUser && _currentUser.id,
+      activeKey: getActiveKey(),
+      activeDate: getStateDate(getActiveKey(), _listsCache[getActiveKey()]),
+      listKeys: Object.keys(_listsCache),
+      dirtyKeys: [..._dirtyKeys],
+      deletedKeys: [..._deletedKeys],
+      hasRemotePoll: Boolean(_remotePollTimer),
+      hasRealtimeChannel: Boolean(_remoteChannel)
+    });
+
     function getActiveKey() { return localStorage.getItem('burner-active') || todayKey(); }
     function setActiveKey(key) { localStorage.setItem('burner-active', key); }
     function todayKey() { return new Date().toISOString().slice(0, 10); }
@@ -1254,7 +1267,8 @@
     function saveState() {
       const lists = getAllLists();
       const key = getActiveKey();
-      const state = {};
+      const previousState = lists[key] || {};
+      const state = { date: getStateDate(key, previousState) };
       ['front-burner', 'back-burner', 'kitchen-sink'].forEach(zone => {
         const nameEl = document.querySelector(`.project-name[data-zone="${zone}"]`);
         const tasks = Array.from(document.querySelectorAll(`.task-list[data-zone="${zone}"] .task-item`)).map(li => ({
@@ -1565,7 +1579,7 @@
       if (focus) {
         li.querySelector('.task-text').focus();
       }
-      saveState();
+      if (text || done) saveState();
     }
 
     // ── Drag & drop ───────────────────────────────────────────────────
@@ -1698,7 +1712,7 @@
       const key = getActiveKey();
       if (!lists[key]) {
         lists[key] = makeDefaultState();
-        saveAllLists(lists, [key]);
+        persistLocalLists(lists);
       }
       const state = lists[key];
 
@@ -1867,6 +1881,7 @@
           _listsCache = local;
           const key = todayKey();
           if (!_listsCache[key]) _listsCache[key] = makeDefaultState();
+          persistLocalLists(_listsCache);
           if (!getActiveKey() || !_listsCache[getActiveKey()]) setActiveKey(key);
           bindZoneDropTargets();
           render();
@@ -1886,7 +1901,7 @@
       const key = todayKey();
       if (!_listsCache[key]) {
         _listsCache[key] = makeDefaultState();
-        saveAllLists(_listsCache, [key]);
+        persistLocalLists(_listsCache);
       }
       if (!getActiveKey() || !_listsCache[getActiveKey()]) setActiveKey(key);
       bindZoneDropTargets();
