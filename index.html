@@ -1136,6 +1136,13 @@
       }
     }
 
+    function markLocalOnlyListsForUpload(localLists, remoteLists) {
+      Object.keys(localLists || {}).forEach(key => {
+        if (!remoteLists[key] && !isEmptyState(localLists[key])) _dirtyKeys.add(key);
+      });
+      if (_dirtyKeys.size > 0) _scheduleSync();
+    }
+
     function applyRemoteSnapshot(remote) {
       let changed = false;
       const merged = {};
@@ -1888,10 +1895,12 @@
       hideAuthOverlay();
 
       // Show local data immediately so the user never sees a blank app
+      let localBeforeRemote = {};
       try {
         const local = JSON.parse(localStorage.getItem('burner-lists-local') || 'null');
         if (local && Object.keys(local).length > 0) {
           _listsCache = local;
+          localBeforeRemote = { ...local };
           const key = todayKey();
           if (!_listsCache[key]) _listsCache[key] = makeDefaultState();
           persistLocalLists(_listsCache);
@@ -1905,9 +1914,12 @@
       const remote = await _loadAllLists();
       if (Object.keys(remote).length > 0) {
         _listsCache = { ..._listsCache, ...remote };
+        markLocalOnlyListsForUpload(localBeforeRemote, remote);
       } else if (Object.keys(_listsCache).length > 0) {
         // Supabase empty but we have local data — push it up
-        Object.keys(_listsCache).forEach(k => _dirtyKeys.add(k));
+        Object.keys(_listsCache).forEach(k => {
+          if (!isEmptyState(_listsCache[k])) _dirtyKeys.add(k);
+        });
         _scheduleSync();
       }
 
