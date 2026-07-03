@@ -1019,7 +1019,7 @@
     let _syncTimer   = null;
     let _remoteChannel = null;
     let _remotePollTimer = null;
-    const REMOTE_POLL_MS = 10000;
+    const REMOTE_POLL_MS = 3000;
 
     // ── Storage helpers ───────────────────────────────────────────────
     function getAllLists() { return _listsCache; }
@@ -1028,10 +1028,10 @@
       try { localStorage.setItem('burner-lists-local', JSON.stringify(lists)); } catch(e) {}
     }
 
-    function saveAllLists(lists) {
+    function saveAllLists(lists, dirtyKeys = Object.keys(lists)) {
       _listsCache = lists;
       persistLocalLists(lists);
-      Object.keys(lists).forEach(k => _dirtyKeys.add(k));
+      dirtyKeys.forEach(k => _dirtyKeys.add(k));
       _scheduleSync();
     }
 
@@ -1141,6 +1141,7 @@
 
     async function refreshFromRemote() {
       if (!_currentUser) return;
+      if (_dirtyKeys.size > 0 || _deletedKeys.size > 0) await _flushSync();
       const remote = await _loadAllLists();
       applyRemoteSnapshot(remote);
     }
@@ -1242,7 +1243,7 @@
       const lists2 = getAllLists();
       state.quote = (lists2[key] && lists2[key].quote) || '';
       lists[key] = state;
-      saveAllLists(lists);
+      saveAllLists(lists, [key]);
       updateUnscheduledSection();
       updateRescheduleBar();
       renderSidebar();
@@ -1365,7 +1366,7 @@
           const newDate = input.value;
           if (!newDate) return;
           const ls = getAllLists();
-          if (ls[key]) { ls[key].date = newDate; saveAllLists(ls); }
+          if (ls[key]) { ls[key].date = newDate; saveAllLists(ls, [key]); }
           if (key === getActiveKey()) updateDateDisplay();
           renderSidebar();
         });
@@ -1382,7 +1383,7 @@
             });
             setActiveKey(remaining[0] || todayKey());
             if (!getAllLists()[getActiveKey()]) {
-              const ls = getAllLists(); ls[getActiveKey()] = makeDefaultState(); saveAllLists(ls);
+              const ls = getAllLists(); const activeKey = getActiveKey(); ls[activeKey] = makeDefaultState(); saveAllLists(ls, [activeKey]);
             }
             render();
           } else {
@@ -1464,7 +1465,7 @@
         if (!lists[tomorrowKey]) lists[tomorrowKey] = makeDefaultState();
         if (!lists[tomorrowKey].unscheduled) lists[tomorrowKey].unscheduled = [];
         lists[tomorrowKey].unscheduled.push({ text: taskText, done: false });
-        saveAllLists(lists);
+        saveAllLists(lists, [tomorrowKey]);
         li.remove();
         saveState();
         showToast(`Postponed to ${tomorrowLabel}`);
@@ -1638,7 +1639,7 @@
       const key = getActiveKey();
       if (lists[key]) {
         lists[key].quote = '';
-        saveAllLists(lists);
+        saveAllLists(lists, [key]);
       }
       renderQuote('');
     }
@@ -1659,7 +1660,7 @@
       const key = getActiveKey();
       if (!lists[key]) lists[key] = makeDefaultState();
       lists[key].quote = value;
-      saveAllLists(lists);
+      saveAllLists(lists, [key]);
       renderQuote(value);
       closeQuoteModal();
     }
@@ -1670,7 +1671,7 @@
       const key = getActiveKey();
       if (!lists[key]) {
         lists[key] = makeDefaultState();
-        saveAllLists(lists);
+        saveAllLists(lists, [key]);
       }
       const state = lists[key];
 
@@ -1716,7 +1717,7 @@
       const key = newListKey();
       const lists = getAllLists();
       lists[key] = makeDefaultState();
-      saveAllLists(lists);
+      saveAllLists(lists, [key]);
       setActiveKey(key);
       render();
       toggleSidebar(false);
@@ -1776,7 +1777,7 @@
 
       lists[activeKey] = state;
       lists[nextKey] = nextState;
-      saveAllLists(lists);
+      saveAllLists(lists, [activeKey, nextKey]);
       render();
       if (moved > 0) showToast(`${moved} task${moved > 1 ? 's' : ''} moved to ${formatShortDate(nextKey)}`);
     });
@@ -1805,7 +1806,7 @@
       reader.onload = ev => {
         try {
           const imported = JSON.parse(ev.target.result);
-          if (imported['burner-lists']) saveAllLists(imported['burner-lists']);
+          if (imported['burner-lists']) saveAllLists(imported['burner-lists'], Object.keys(imported['burner-lists']));
           if (imported['burner-active']) setActiveKey(imported['burner-active']);
           render();
           showToast('Data imported!');
@@ -1858,7 +1859,7 @@
       const key = todayKey();
       if (!_listsCache[key]) {
         _listsCache[key] = makeDefaultState();
-        saveAllLists(_listsCache);
+        saveAllLists(_listsCache, [key]);
       }
       if (!getActiveKey() || !_listsCache[getActiveKey()]) setActiveKey(key);
       bindZoneDropTargets();
