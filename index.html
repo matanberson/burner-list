@@ -1054,8 +1054,9 @@
     // ── In-memory cache + dirty tracking ─────────────────────────────
     let _listsCache = {};
     let _currentUser = null;
-    let _dirtyKeys   = new Set();
-    let _deletedKeys = new Set();
+    let _dirtyKeys   = loadDirtyKeys();
+    let _deleteTombstones = loadDeleteTombstones();
+    let _deletedKeys = new Set(_deleteTombstones);
     let _syncTimer   = null;
     let _remoteChannel = null;
     let _remotePollTimer = null;
@@ -1066,6 +1067,44 @@
 
     function persistLocalLists(lists) {
       try { localStorage.setItem('burner-lists-local', JSON.stringify(lists)); } catch(e) {}
+    }
+
+    function loadDirtyKeys() {
+      try {
+        return new Set(JSON.parse(localStorage.getItem('burner-dirty-keys') || '[]'));
+      } catch(e) {
+        return new Set();
+      }
+    }
+
+    function persistDirtyKeys() {
+      try { localStorage.setItem('burner-dirty-keys', JSON.stringify([..._dirtyKeys])); } catch(e) {}
+    }
+
+    function loadDeleteTombstones() {
+      try {
+        return new Set(JSON.parse(localStorage.getItem('burner-delete-tombstones') || '[]'));
+      } catch(e) {
+        return new Set();
+      }
+    }
+
+    function persistDeleteTombstones() {
+      try { localStorage.setItem('burner-delete-tombstones', JSON.stringify([..._deleteTombstones])); } catch(e) {}
+    }
+
+    function isDeletedKey(key) {
+      return _deletedKeys.has(key) || _deleteTombstones.has(key);
+    }
+
+    function tombstoneListKey(key) {
+      _deleteTombstones.add(key);
+      persistDeleteTombstones();
+    }
+
+    function reviveListKey(key) {
+      _deletedKeys.delete(key);
+      if (_deleteTombstones.delete(key)) persistDeleteTombstones();
     }
 
     function hasInitializedRemote() {
@@ -1079,7 +1118,11 @@
     function saveAllLists(lists, dirtyKeys = Object.keys(lists)) {
       _listsCache = lists;
       persistLocalLists(lists);
-      dirtyKeys.forEach(k => _dirtyKeys.add(k));
+      dirtyKeys.forEach(k => {
+        reviveListKey(k);
+        _dirtyKeys.add(k);
+      });
+      persistDirtyKeys();
       _scheduleSync();
     }
 
@@ -1087,7 +1130,9 @@
       delete _listsCache[key];
       persistLocalLists(_listsCache);
       _dirtyKeys.delete(key);
+      persistDirtyKeys();
       _deletedKeys.add(key);
+      tombstoneListKey(key);
       _scheduleSync();
     }
 
@@ -1117,13 +1162,14 @@
       if (_dirtyKeys.size > 0) {
         const keys = [..._dirtyKeys];
         _dirtyKeys.clear();
+        persistDirtyKeys();
         const rows = keys
           .filter(k => _listsCache[k])
           .map(k => ({ user_id: _currentUser.id, date_key: k, state: _listsCache[k] }));
         if (rows.length) {
           const { error } = await _sb.from('burner_lists')
             .upsert(rows, { onConflict: 'user_id,date_key' });
-          if (error) { keys.forEach(k => _dirtyKeys.add(k)); console.error(error); showToast('⚠️ Sync failed: ' + error.message); }
+          if (error) { keys.forEach(k => _dirtyKeys.add(k)); persistDirtyKeys(); console.error(error); showToast('⚠️ Sync failed: ' + error.message); }
           else { markRemoteInitialized(); }
         }
       }
@@ -1190,7 +1236,7 @@
       const merged = {};
 
       Object.keys(remote).forEach(key => {
-        if (!_deletedKeys.has(key)) merged[key] = remote[key];
+        if (!isDeletedKey(key)) merged[key] = remote[key];
       });
 
       Object.keys(_listsCache).forEach(key => {
@@ -1198,7 +1244,7 @@
           merged[key] = _listsCache[key];
           return;
         }
-        if (_deletedKeys.has(key)) return;
+        if (isDeletedKey(key)) return;
         if (!remote[key]) changed = true;
       });
 
@@ -1226,7 +1272,7 @@
       if (!_currentUser) return;
       if (!row || row.user_id !== _currentUser.id) return;
       const key = row.date_key;
-      if (_dirtyKeys.has(key) || _deletedKeys.has(key)) return;
+      if (_dirtyKeys.has(key) || isDeletedKey(key)) return;
       if (statesEqual(_listsCache[key], row.state)) return;
       _listsCache = { ..._listsCache, [key]: row.state };
       preferRemoteActiveForSameDate(key, row.state);
@@ -1239,7 +1285,10 @@
       if (!_currentUser) return;
       if (!row || row.user_id !== _currentUser.id) return;
       const key = row.date_key;
-      if (_dirtyKeys.has(key) || _deletedKeys.has(key) || !_listsCache[key]) return;
+      if (_dirtyKeys.has(key)) return;
+      tombstoneListKey(key);
+      _deletedKeys.delete(key);
+      if (!_listsCache[key]) return;
       const next = { ..._listsCache };
       delete next[key];
       _listsCache = next;
@@ -1293,13 +1342,14 @@
     window.burnerDebug = () => {
       ensureRemoteSync();
       return {
-        build: 'sync-debug-2026-07-03b',
+        build: 'sync-debug-2026-07-06-sync-audit',
         userId: _currentUser && _currentUser.id,
         activeKey: getActiveKey(),
         activeDate: getStateDate(getActiveKey(), _listsCache[getActiveKey()]),
         listKeys: Object.keys(_listsCache),
         dirtyKeys: [..._dirtyKeys],
         deletedKeys: [..._deletedKeys],
+        deleteTombstones: [..._deleteTombstones],
         remoteInitialized: hasInitializedRemote(),
         hasRemotePoll: Boolean(_remotePollTimer),
         hasRealtimeChannel: Boolean(_remoteChannel)
@@ -1490,7 +1540,7 @@
             });
             setActiveKey(remaining[0] || todayKey());
             if (!getAllLists()[getActiveKey()]) {
-              const ls = getAllLists(); const activeKey = getActiveKey(); ls[activeKey] = makeDefaultState(); saveAllLists(ls, [activeKey]);
+              const ls = getAllLists(); const activeKey = getActiveKey(); ls[activeKey] = makeDefaultState(); persistLocalLists(ls);
             }
             render();
           } else {
@@ -2039,8 +2089,17 @@
       // Then load from Supabase and merge (Supabase wins on conflict)
       const remote = await _loadAllLists();
       if (Object.keys(remote).length > 0) {
-        _listsCache = remote;
-        _dirtyKeys.clear();
+        const dirtyDuringLoad = [..._dirtyKeys];
+        const localBeforeRemote = { ..._listsCache };
+        _listsCache = Object.fromEntries(
+          Object.entries(remote).filter(([key]) => !isDeletedKey(key))
+        );
+        dirtyDuringLoad.forEach(key => {
+          const localState = localBeforeRemote[key];
+          if (localState && !isDeletedKey(key)) _listsCache[key] = localState;
+        });
+        _dirtyKeys = new Set(dirtyDuringLoad.filter(key => _listsCache[key] && !isDeletedKey(key)));
+        persistDirtyKeys();
         markRemoteInitialized();
         persistLocalLists(_listsCache);
       } else if (Object.keys(_listsCache).length > 0 && !hasInitializedRemote()) {
@@ -2048,10 +2107,12 @@
         Object.keys(_listsCache).forEach(k => {
           if (!isEmptyState(_listsCache[k])) _dirtyKeys.add(k);
         });
+        persistDirtyKeys();
         _scheduleSync();
-      } else if (hasInitializedRemote()) {
+      } else if (hasInitializedRemote() && _dirtyKeys.size === 0 && _deletedKeys.size === 0) {
         _listsCache = {};
         _dirtyKeys.clear();
+        persistDirtyKeys();
         persistLocalLists(_listsCache);
       }
 
