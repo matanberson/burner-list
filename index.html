@@ -1060,7 +1060,9 @@
     let _syncTimer   = null;
     let _remoteChannel = null;
     let _remotePollTimer = null;
+    let _rowSyncAvailable = null;
     const REMOTE_POLL_MS = 3000;
+    const ZONES = ['front-burner', 'back-burner', 'kitchen-sink'];
     const DEVICE_ID_KEY = 'burner-device-id';
     const TOMBSTONE_META_KEY = 'burner-delete-tombstone-meta';
     const LOCAL_BACKUPS_KEY = 'burner-lists-backups';
@@ -1071,6 +1073,14 @@
 
     function persistLocalLists(lists) {
       try { localStorage.setItem('burner-lists-local', JSON.stringify(lists)); } catch(e) {}
+    }
+
+    function loadLocalListsSnapshot() {
+      try {
+        return JSON.parse(localStorage.getItem('burner-lists-local') || '{}') || {};
+      } catch(e) {
+        return {};
+      }
     }
 
     function getDeviceId() {
@@ -1216,7 +1226,12 @@
         merged[zone].tasks.sort((a, b) => ((a._meta && a._meta.order) || 0) - ((b._meta && b._meta.order) || 0));
       });
       merged.unscheduled.sort((a, b) => ((a._meta && a._meta.order) || 0) - ((b._meta && b._meta.order) || 0));
-      merged._meta = { ...(base._meta || {}), updatedAt: new Date(Math.max(localMs, remoteMs, Date.now())).toISOString(), deviceId: _deviceId };
+      const mergedMs = Math.max(localMs, remoteMs);
+      merged._meta = {
+        ...(base._meta || {}),
+        updatedAt: mergedMs ? new Date(mergedMs).toISOString() : nowIso(),
+        deviceId: (base._meta && base._meta.deviceId) || _deviceId
+      };
       return compactTaskDeletes(merged);
     }
 
@@ -1353,9 +1368,208 @@
       localStorage.setItem('burner-remote-initialized', '1');
     }
 
+    function stateToListRow(key, state, deletedAt = null) {
+      return {
+        user_id: _currentUser.id,
+        key,
+        date_key: getStateDate(key, state),
+        front_name: (state && state['front-burner'] && state['front-burner'].name) || '',
+        back_name: (state && state['back-burner'] && state['back-burner'].name) || '',
+        quote: (state && state.quote) || '',
+        updated_at: (state && state._meta && state._meta.updatedAt) || nowIso(),
+        deleted_at: deletedAt
+      };
+    }
+
+    function stateToTaskRows(key, state) {
+      const rows = [];
+      ZONES.forEach(zone => {
+        const zoneState = state[zone] || { tasks: [] };
+        (zoneState.tasks || []).forEach((task, index) => {
+          if (!task.id || !(task.text || '').trim()) return;
+          rows.push({
+            user_id: _currentUser.id,
+            id: task.id,
+            list_key: key,
+            zone,
+            text: task.text || '',
+            done: Boolean(task.done),
+            sort_order: task._meta && Number.isFinite(task._meta.order) ? task._meta.order : index,
+            updated_at: (task._meta && task._meta.updatedAt) || (state._meta && state._meta.updatedAt) || nowIso(),
+            deleted_at: null
+          });
+        });
+      });
+      (state.unscheduled || []).forEach((task, index) => {
+        if (!task.id || !(task.text || '').trim()) return;
+        rows.push({
+          user_id: _currentUser.id,
+          id: task.id,
+          list_key: key,
+          zone: 'unscheduled',
+          text: task.text || '',
+          done: Boolean(task.done),
+          sort_order: task._meta && Number.isFinite(task._meta.order) ? task._meta.order : index,
+          updated_at: (task._meta && task._meta.updatedAt) || (state._meta && state._meta.updatedAt) || nowIso(),
+          deleted_at: null
+        });
+      });
+      Object.entries(state._taskDeletes || {}).forEach(([id, meta]) => {
+        rows.push({
+          user_id: _currentUser.id,
+          id,
+          list_key: key,
+          zone: 'unscheduled',
+          text: '',
+          done: false,
+          sort_order: 0,
+          updated_at: meta.deletedAt || nowIso(),
+          deleted_at: meta.deletedAt || nowIso()
+        });
+      });
+      return rows;
+    }
+
+    function rowsToStates(listRows, taskRows) {
+      const states = {};
+      (listRows || []).forEach(row => {
+        if (row.deleted_at) return;
+        states[row.key] = {
+          date: row.date_key || row.key,
+          'front-burner': { name: row.front_name || '', tasks: [] },
+          'back-burner': { name: row.back_name || '', tasks: [] },
+          'kitchen-sink': { name: '', tasks: [] },
+          unscheduled: [],
+          quote: row.quote || '',
+          _taskDeletes: {},
+          _meta: { updatedAt: row.updated_at || nowIso(), deviceId: 'remote-row' }
+        };
+      });
+      (taskRows || []).forEach(row => {
+        const state = states[row.list_key];
+        if (!state) return;
+        if (row.deleted_at) {
+          state._taskDeletes[row.id] = { deletedAt: row.deleted_at, deviceId: 'remote-row' };
+          return;
+        }
+        const task = {
+          id: row.id,
+          text: row.text || '',
+          done: Boolean(row.done),
+          _meta: { updatedAt: row.updated_at || nowIso(), deviceId: 'remote-row', zone: row.zone, order: row.sort_order || 0 }
+        };
+        if (row.zone === 'unscheduled') state.unscheduled.push(task);
+        else if (state[row.zone]) state[row.zone].tasks.push(task);
+      });
+      Object.values(states).forEach(state => {
+        ZONES.forEach(zone => state[zone].tasks.sort((a, b) => ((a._meta && a._meta.order) || 0) - ((b._meta && b._meta.order) || 0)));
+        state.unscheduled.sort((a, b) => ((a._meta && a._meta.order) || 0) - ((b._meta && b._meta.order) || 0));
+      });
+      return states;
+    }
+
+    async function loadListsV2(keys = null) {
+      if (!_currentUser || _rowSyncAvailable === false) return null;
+      const { data: { session } } = await _sb.auth.getSession();
+      if (!session) { console.error('[load] no valid session'); return null; }
+
+      let listQuery = _sb.from('burner_lists_v2')
+        .select('key,date_key,front_name,back_name,quote,updated_at,deleted_at')
+        .eq('user_id', session.user.id);
+      let taskQuery = _sb.from('burner_tasks_v2')
+        .select('id,list_key,zone,text,done,sort_order,updated_at,deleted_at')
+        .eq('user_id', session.user.id);
+      if (keys && keys.length) {
+        listQuery = listQuery.in('key', keys);
+        taskQuery = taskQuery.in('list_key', keys);
+      }
+      const [{ data: lists, error: listError }, { data: tasks, error: taskError }] = await Promise.all([listQuery, taskQuery]);
+      if (listError || taskError) {
+        const error = listError || taskError;
+        if (error && (error.code === '42P01' || /burner_.*_v2/.test(error.message || ''))) {
+          _rowSyncAvailable = false;
+          console.warn('[sync-v2] row tables not available; falling back to blob sync');
+          return null;
+        }
+        console.error('[sync-v2] load failed', error);
+        showToast('⚠️ Load failed: ' + error.message);
+        return null;
+      }
+      _rowSyncAvailable = true;
+      return rowsToStates(lists, tasks);
+    }
+
+    async function upsertListsV2(keys) {
+      if (!_currentUser || _rowSyncAvailable === false || !keys.length) return false;
+      const remoteBeforeWrite = await loadListsV2(keys);
+      if (remoteBeforeWrite === null) return false;
+      keys.forEach(key => {
+        if (_listsCache[key] && remoteBeforeWrite[key]) {
+          _listsCache[key] = touchState(mergeListStates(_listsCache[key], remoteBeforeWrite[key]));
+        }
+      });
+      const listRows = keys.filter(k => _listsCache[k]).map(k => stateToListRow(k, _listsCache[k]));
+      const taskRows = keys.flatMap(k => _listsCache[k] ? stateToTaskRows(k, _listsCache[k]) : []);
+      if (listRows.length) {
+        const { error } = await _sb.from('burner_lists_v2').upsert(listRows, { onConflict: 'user_id,key' });
+        if (error) { console.error('[sync-v2] list upsert failed', error); showToast('⚠️ Sync failed: ' + error.message); return false; }
+      }
+      if (taskRows.length) {
+        const { error } = await _sb.from('burner_tasks_v2').upsert(taskRows, { onConflict: 'user_id,id' });
+        if (error) { console.error('[sync-v2] task upsert failed', error); showToast('⚠️ Sync failed: ' + error.message); return false; }
+      }
+      markRemoteInitialized();
+      return true;
+    }
+
+    async function tombstoneListsV2(keys) {
+      if (!_currentUser || _rowSyncAvailable === false || !keys.length) return false;
+      const timestamp = nowIso();
+      const rows = keys.map(k => stateToListRow(k, _listsCache[k] || makeDefaultState(), timestamp));
+      const { error: listError } = await _sb.from('burner_lists_v2').upsert(rows, { onConflict: 'user_id,key' });
+      if (listError) {
+        if (listError.code === '42P01') { _rowSyncAvailable = false; return false; }
+        console.error('[sync-v2] list tombstone failed', listError);
+        showToast('⚠️ Sync failed: ' + listError.message);
+        return false;
+      }
+      const { error: taskError } = await _sb.from('burner_tasks_v2')
+        .update({ deleted_at: timestamp, updated_at: timestamp })
+        .eq('user_id', _currentUser.id)
+        .in('list_key', keys);
+      if (taskError) {
+        console.error('[sync-v2] task tombstone failed', taskError);
+        showToast('⚠️ Sync failed: ' + taskError.message);
+        return false;
+      }
+      markRemoteInitialized();
+      return true;
+    }
+
+    function mergeLocalSnapshotIntoCache(keys = null) {
+      const stored = loadLocalListsSnapshot();
+      const keySet = new Set(keys || [...Object.keys(stored), ...Object.keys(_listsCache)]);
+      let changed = false;
+      const next = { ..._listsCache };
+      keySet.forEach(key => {
+        if (isDeletedKey(key)) return;
+        if (!stored[key]) return;
+        const merged = next[key] ? mergeListStates(next[key], stored[key]) : normalizeListState(stored[key]);
+        if (!statesEqual(next[key], merged)) {
+          next[key] = merged;
+          changed = true;
+        }
+      });
+      if (changed) _listsCache = next;
+      return changed;
+    }
+
     function saveAllLists(lists, dirtyKeys = Object.keys(lists)) {
+      const stored = loadLocalListsSnapshot();
       dirtyKeys.forEach(k => {
-        if (lists[k]) lists[k] = touchState(normalizeListState(lists[k]));
+        if (!lists[k]) return;
+        if (stored[k] && !isDeletedKey(k)) lists[k] = mergeListStates(lists[k], stored[k]);
+        lists[k] = touchState(normalizeListState(lists[k]));
       });
       _listsCache = lists;
       persistLocalLists(lists);
@@ -1390,6 +1604,9 @@
       if (_deletedKeys.size > 0) {
         const toDelete = [..._deletedKeys];
         _deletedKeys.clear();
+        if (await tombstoneListsV2(toDelete)) {
+          markRemoteInitialized();
+        } else {
         const rows = toDelete.map(k => ({
           user_id: _currentUser.id,
           date_key: k,
@@ -1404,12 +1621,16 @@
         } else {
           markRemoteInitialized();
         }
+        }
       }
 
       if (_dirtyKeys.size > 0) {
         const keys = [..._dirtyKeys];
         _dirtyKeys.clear();
         persistDirtyKeys();
+        if (await upsertListsV2(keys)) {
+          persistLocalLists(_listsCache);
+        } else {
         const remoteBeforeWrite = await _loadListsByKeys(keys);
         const rows = keys
           .filter(k => _listsCache[k])
@@ -1425,6 +1646,7 @@
           if (error) { keys.forEach(k => _dirtyKeys.add(k)); persistDirtyKeys(); console.error(error); showToast('⚠️ Sync failed: ' + error.message); }
           else { markRemoteInitialized(); }
         }
+        }
       }
 
       if (badge) badge.classList.remove('syncing');
@@ -1432,6 +1654,8 @@
 
     async function _loadAllLists() {
       if (!_currentUser) return {};
+      const rowStates = await loadListsV2();
+      if (rowStates !== null) return rowStates;
       // Ensure the auth token is valid/refreshed before querying
       const { data: { session } } = await _sb.auth.getSession();
       if (!session) { console.error('[load] no valid session'); return {}; }
@@ -1446,6 +1670,8 @@
 
     async function _loadListsByKeys(keys) {
       if (!_currentUser || !keys.length) return {};
+      const rowStates = await loadListsV2(keys);
+      if (rowStates !== null) return rowStates;
       const { data: { session } } = await _sb.auth.getSession();
       if (!session) { console.error('[load] no valid session'); return {}; }
       const { data, error } = await _sb.from('burner_lists')
@@ -1640,17 +1866,19 @@
     function startRemoteSync() {
       if (!_currentUser) return;
       stopRemoteSync();
-      _remoteChannel = _sb
-        .channel(`burner-lists-${_currentUser.id}`)
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'burner_lists', filter: `user_id=eq.${_currentUser.id}` },
-          payload => {
-            if (payload.eventType === 'DELETE') applyRemoteDelete(payload.old);
-            else applyRemoteUpsert(payload.new);
-          }
-        )
-        .subscribe(status => console.log('[realtime]', status));
+      if (_rowSyncAvailable !== true) {
+        _remoteChannel = _sb
+          .channel(`burner-lists-${_currentUser.id}`)
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'burner_lists', filter: `user_id=eq.${_currentUser.id}` },
+            payload => {
+              if (payload.eventType === 'DELETE') applyRemoteDelete(payload.old);
+              else applyRemoteUpsert(payload.new);
+            }
+          )
+          .subscribe(status => console.log('[realtime]', status));
+      }
 
       _remotePollTimer = setInterval(refreshFromRemote, REMOTE_POLL_MS);
       document.addEventListener('visibilitychange', handleVisibilityRefresh);
@@ -1666,8 +1894,9 @@
     window.burnerDebug = () => {
       ensureRemoteSync();
       return {
-        build: 'sync-debug-2026-07-06-merge-before-write',
+        build: 'sync-debug-2026-07-06-row-sync-adapter',
         deviceId: _deviceId,
+        rowSyncAvailable: _rowSyncAvailable,
         userId: _currentUser && _currentUser.id,
         activeKey: getActiveKey(),
         activeDate: getStateDate(getActiveKey(), _listsCache[getActiveKey()]),
@@ -1707,6 +1936,7 @@
         : Date.now().toString();
     }
     function saveState() {
+      mergeLocalSnapshotIntoCache([getActiveKey()]);
       const lists = getAllLists();
       const key = getActiveKey();
       const previousState = lists[key] || {};
@@ -2546,6 +2776,15 @@
     applyTheme(getTheme());
     if (window.lucide) lucide.createIcons();
     setInterval(ensureRemoteSync, 5000);
+    window.addEventListener('storage', e => {
+      if (e.key !== 'burner-lists-local') return;
+      const active = document.activeElement;
+      const isEditing = active && (active.classList.contains('task-text') || active.classList.contains('project-name'));
+      if (mergeLocalSnapshotIntoCache()) {
+        normalizeActiveKey();
+        if (!isEditing) render();
+      }
+    });
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')

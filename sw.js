@@ -1,4 +1,4 @@
-const CACHE_NAME = 'burner-list-shell-v6';
+const CACHE_NAME = 'burner-list-shell-v8';
 const SHELL_ASSETS = [
   '/',
   '/index.html',
