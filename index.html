@@ -1099,6 +1099,127 @@
       return next;
     }
 
+    function newTaskId() {
+      return typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `task-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    }
+
+    function normalizeTask(task, zone, order, timestamp = nowIso()) {
+      const next = { ...(task || {}) };
+      if (!next.id) next.id = newTaskId();
+      next._meta = {
+        ...(next._meta || {}),
+        updatedAt: (next._meta && next._meta.updatedAt) || timestamp,
+        deviceId: (next._meta && next._meta.deviceId) || _deviceId,
+        zone,
+        order
+      };
+      return next;
+    }
+
+    function normalizeListState(state) {
+      const next = { ...(state || makeDefaultState()) };
+      ['front-burner', 'back-burner', 'kitchen-sink'].forEach(zone => {
+        const zoneState = next[zone] || { name: '', tasks: [] };
+        next[zone] = {
+          ...zoneState,
+          tasks: (zoneState.tasks || []).map((task, index) => normalizeTask(task, zone, index))
+        };
+      });
+      next.unscheduled = (next.unscheduled || []).map((task, index) => normalizeTask(task, 'unscheduled', index));
+      next._taskDeletes = next._taskDeletes || {};
+      return next;
+    }
+
+    function getTaskUpdatedMs(task) {
+      const value = task && task._meta && task._meta.updatedAt;
+      const ms = value ? Date.parse(value) : 0;
+      return Number.isFinite(ms) ? ms : 0;
+    }
+
+    function getTaskDeleteMs(state, id) {
+      const value = state && state._taskDeletes && state._taskDeletes[id] && state._taskDeletes[id].deletedAt;
+      const ms = value ? Date.parse(value) : 0;
+      return Number.isFinite(ms) ? ms : 0;
+    }
+
+    function collectTasksById(state) {
+      const normalized = normalizeListState(state);
+      const out = {};
+      ['front-burner', 'back-burner', 'kitchen-sink'].forEach(zone => {
+        ((normalized[zone] && normalized[zone].tasks) || []).forEach((task, index) => {
+          const normalizedTask = normalizeTask(task, zone, index);
+          out[normalizedTask.id] = normalizedTask;
+        });
+      });
+      (normalized.unscheduled || []).forEach((task, index) => {
+        const normalizedTask = normalizeTask(task, 'unscheduled', index);
+        out[normalizedTask.id] = normalizedTask;
+      });
+      return out;
+    }
+
+    function mergeTaskDeletes(localState, remoteState) {
+      return { ...((localState && localState._taskDeletes) || {}), ...((remoteState && remoteState._taskDeletes) || {}) };
+    }
+
+    function compactTaskDeletes(state) {
+      const deletes = state._taskDeletes || {};
+      const kept = {};
+      const cutoff = Date.now() - 1000 * 60 * 60 * 24 * 45;
+      Object.keys(deletes).forEach(id => {
+        const ms = Date.parse(deletes[id].deletedAt || '');
+        if (!Number.isFinite(ms) || ms > cutoff) kept[id] = deletes[id];
+      });
+      state._taskDeletes = kept;
+      return state;
+    }
+
+    function mergeListStates(localState, remoteState) {
+      if (!localState) return remoteState ? normalizeListState(remoteState) : localState;
+      if (!remoteState) return normalizeListState(localState);
+
+      const localMs = getStateUpdatedMs(localState);
+      const remoteMs = getStateUpdatedMs(remoteState);
+      const base = normalizeListState(remoteMs >= localMs ? remoteState : localState);
+      const merged = {
+        ...base,
+        'front-burner': { ...(base['front-burner'] || {}), tasks: [] },
+        'back-burner': { ...(base['back-burner'] || {}), tasks: [] },
+        'kitchen-sink': { ...(base['kitchen-sink'] || {}), tasks: [] },
+        unscheduled: [],
+        _taskDeletes: mergeTaskDeletes(localState, remoteState)
+      };
+
+      const localTasks = collectTasksById(localState);
+      const remoteTasks = collectTasksById(remoteState);
+      const taskIds = new Set([...Object.keys(localTasks), ...Object.keys(remoteTasks)]);
+      taskIds.forEach(id => {
+        const localTask = localTasks[id];
+        const remoteTask = remoteTasks[id];
+        const chosen = !remoteTask || (localTask && getTaskUpdatedMs(localTask) > getTaskUpdatedMs(remoteTask))
+          ? localTask
+          : remoteTask;
+        const deleteMs = Math.max(getTaskDeleteMs(localState, id), getTaskDeleteMs(remoteState, id));
+        if (deleteMs && deleteMs >= getTaskUpdatedMs(chosen)) {
+          merged._taskDeletes[id] = { deletedAt: new Date(deleteMs).toISOString(), deviceId: _deviceId };
+          return;
+        }
+        const zone = (chosen._meta && chosen._meta.zone) || 'unscheduled';
+        const targetZone = ['front-burner', 'back-burner', 'kitchen-sink'].includes(zone) ? zone : 'unscheduled';
+        if (targetZone === 'unscheduled') merged.unscheduled.push(chosen);
+        else merged[targetZone].tasks.push(chosen);
+      });
+
+      ['front-burner', 'back-burner', 'kitchen-sink'].forEach(zone => {
+        merged[zone].tasks.sort((a, b) => ((a._meta && a._meta.order) || 0) - ((b._meta && b._meta.order) || 0));
+      });
+      merged.unscheduled.sort((a, b) => ((a._meta && a._meta.order) || 0) - ((b._meta && b._meta.order) || 0));
+      merged._meta = { ...(base._meta || {}), updatedAt: new Date(Math.max(localMs, remoteMs, Date.now())).toISOString(), deviceId: _deviceId };
+      return compactTaskDeletes(merged);
+    }
+
     function isRemoteTombstone(state) {
       return Boolean(state && state._deleted === true);
     }
@@ -1140,10 +1261,13 @@
       let changed = false;
       Object.keys(_listsCache).forEach(key => {
         const state = _listsCache[key];
-        if (!state || state._meta || isEmptyState(state)) return;
-        _listsCache[key] = touchState(state);
-        _dirtyKeys.add(key);
-        changed = true;
+        if (!state || isEmptyState(state)) return;
+        const normalized = normalizeListState(state);
+        if (!state._meta || !statesEqual(state, normalized)) {
+          _listsCache[key] = touchState(normalized);
+          _dirtyKeys.add(key);
+          changed = true;
+        }
       });
       if (!changed) return;
       persistLocalLists(_listsCache);
@@ -1231,7 +1355,7 @@
 
     function saveAllLists(lists, dirtyKeys = Object.keys(lists)) {
       dirtyKeys.forEach(k => {
-        if (lists[k]) lists[k] = touchState(lists[k]);
+        if (lists[k]) lists[k] = touchState(normalizeListState(lists[k]));
       });
       _listsCache = lists;
       persistLocalLists(lists);
@@ -1375,14 +1499,10 @@
         }
 
         if (isDeletedKey(key) && getDeleteTombstoneMs(key) >= getStateUpdatedMs(remoteState)) return;
-        if (localState && getStateUpdatedMs(localState) > getStateUpdatedMs(remoteState)) {
-          merged[key] = localState;
-          if (!isEmptyState(localState)) _dirtyKeys.add(key);
-          changed = true;
-          return;
-        }
         reviveListKey(key);
-        merged[key] = remoteState;
+        const mergedState = mergeListStates(localState, remoteState);
+        merged[key] = mergedState;
+        if (localState && !statesEqual(mergedState, remoteState)) _dirtyKeys.add(key);
       });
 
       Object.keys(_listsCache).forEach(key => {
@@ -1448,17 +1568,17 @@
       }
       if (_dirtyKeys.has(key)) return;
       if (isDeletedKey(key) && getDeleteTombstoneMs(key) >= getStateUpdatedMs(row.state)) return;
-      if (_listsCache[key] && getStateUpdatedMs(_listsCache[key]) > getStateUpdatedMs(row.state)) {
+      const mergedState = mergeListStates(_listsCache[key], row.state);
+      if (statesEqual(_listsCache[key], mergedState)) return;
+      backupLocalLists('before-remote-upsert');
+      reviveListKey(key);
+      _listsCache = { ..._listsCache, [key]: mergedState };
+      if (!statesEqual(mergedState, row.state)) {
         _dirtyKeys.add(key);
         persistDirtyKeys();
         _scheduleSync();
-        return;
       }
-      if (statesEqual(_listsCache[key], row.state)) return;
-      backupLocalLists('before-remote-upsert');
-      reviveListKey(key);
-      _listsCache = { ..._listsCache, [key]: row.state };
-      preferRemoteActiveForSameDate(key, row.state);
+      preferRemoteActiveForSameDate(key, mergedState);
       normalizeActiveKey();
       persistLocalLists(_listsCache);
       render();
@@ -1526,7 +1646,7 @@
     window.burnerDebug = () => {
       ensureRemoteSync();
       return {
-        build: 'sync-debug-2026-07-06-conflict-safe',
+        build: 'sync-debug-2026-07-06-task-merge',
         deviceId: _deviceId,
         userId: _currentUser && _currentUser.id,
         activeKey: getActiveKey(),
@@ -1570,26 +1690,60 @@
       const lists = getAllLists();
       const key = getActiveKey();
       const previousState = lists[key] || {};
+      const previousTasks = collectTasksById(previousState);
+      const timestamp = nowIso();
       const state = { date: getStateDate(key, previousState) };
       ['front-burner', 'back-burner', 'kitchen-sink'].forEach(zone => {
         const nameEl = document.querySelector(`.project-name[data-zone="${zone}"]`);
-        const tasks = Array.from(document.querySelectorAll(`.task-list[data-zone="${zone}"] .task-item`)).map(li => ({
-          text: li.querySelector('.task-text').value,
-          done: li.querySelector('input[type="checkbox"]').checked
-        }));
+        const tasks = Array.from(document.querySelectorAll(`.task-list[data-zone="${zone}"] .task-item`)).map((li, index) => {
+          const id = li.dataset.taskId || newTaskId();
+          li.dataset.taskId = id;
+          const previous = previousTasks[id] || {};
+          const changed = li.dataset.changed === '1' || !previous.id;
+          const updatedAt = changed ? timestamp : (previous._meta && previous._meta.updatedAt) || li.dataset.updatedAt || timestamp;
+          li.dataset.updatedAt = updatedAt;
+          li.dataset.changed = '0';
+          return {
+            id,
+            text: li.querySelector('.task-text').value,
+            done: li.querySelector('input[type="checkbox"]').checked,
+            _meta: { ...(previous._meta || {}), updatedAt, deviceId: changed ? _deviceId : ((previous._meta && previous._meta.deviceId) || _deviceId), zone, order: index }
+          };
+        });
         state[zone] = { name: nameEl ? nameEl.value : '', tasks };
       });
-      state.unscheduled = Array.from(document.querySelectorAll(`.task-list[data-zone="unscheduled"] .task-item`)).map(li => ({
-        text: li.querySelector('.task-text').value,
-        done: li.querySelector('input[type="checkbox"]').checked
-      }));
+      state.unscheduled = Array.from(document.querySelectorAll(`.task-list[data-zone="unscheduled"] .task-item`)).map((li, index) => {
+        const id = li.dataset.taskId || newTaskId();
+        li.dataset.taskId = id;
+        const previous = previousTasks[id] || {};
+        const changed = li.dataset.changed === '1' || !previous.id;
+        const updatedAt = changed ? timestamp : (previous._meta && previous._meta.updatedAt) || li.dataset.updatedAt || timestamp;
+        li.dataset.updatedAt = updatedAt;
+        li.dataset.changed = '0';
+        return {
+          id,
+          text: li.querySelector('.task-text').value,
+          done: li.querySelector('input[type="checkbox"]').checked,
+          _meta: { ...(previous._meta || {}), updatedAt, deviceId: changed ? _deviceId : ((previous._meta && previous._meta.deviceId) || _deviceId), zone: 'unscheduled', order: index }
+        };
+      });
       const lists2 = getAllLists();
       state.quote = (lists2[key] && lists2[key].quote) || '';
+      state._taskDeletes = { ...(previousState._taskDeletes || {}) };
       lists[key] = state;
       saveAllLists(lists, [key]);
       updateUnscheduledSection();
       updateRescheduleBar();
       renderSidebar();
+    }
+
+    function markTaskDeleted(task) {
+      if (!task || !task.id || !task.text || !task.text.trim()) return;
+      const lists = getAllLists();
+      const key = getActiveKey();
+      if (!lists[key]) return;
+      lists[key]._taskDeletes = { ...(lists[key]._taskDeletes || {}), [task.id]: { deletedAt: nowIso(), deviceId: _deviceId } };
+      persistLocalLists(lists);
     }
 
     function updateUnscheduledSection() {
@@ -1750,6 +1904,7 @@
       const text = li.querySelector('.task-text');
       if (pendingPaste && pendingPaste.input === text) return;
       if (text.value.trim() === '' && li.isConnected) {
+        markTaskDeleted({ id: li.dataset.taskId, text: text.value || li.dataset.previousText || '' });
         li.remove();
         saveState();
       }
@@ -1802,13 +1957,14 @@
       if (!pendingPaste) return;
       const { input, lines } = pendingPaste;
       const li = input.closest('.task-item');
-      const list = input.closest('.task-list');
+        const list = input.closest('.task-list');
       if (!li || !list) { closePasteModal(); return; }
       const zone = li.dataset.zone;
       let insertAfter = li;
       const linesToAdd = [...lines];
       if (input.value.trim() === '') {
         input.value = linesToAdd.shift() || '';
+        li.dataset.changed = '1';
       }
       linesToAdd.forEach(line => {
         const newLi = createTaskItem(zone, { text: line, done: false }, list.children.length);
@@ -1827,6 +1983,10 @@
       li.draggable = true;
       li.dataset.zone = zone;
       li.dataset.index = index;
+      li.dataset.taskId = task.id || newTaskId();
+      li.dataset.updatedAt = (task._meta && task._meta.updatedAt) || nowIso();
+      li.dataset.changed = task.id ? '0' : '1';
+      li.dataset.previousText = task.text || '';
 
       const handle = document.createElement('span');
       handle.className = 'drag-handle';
@@ -1871,10 +2031,11 @@
         postponeMenu.classList.remove('open');
         const taskText = text.value.trim();
         if (!taskText) return;
+        markTaskDeleted({ id: li.dataset.taskId, text: taskText });
         const lists = getAllLists();
         if (!lists[tomorrowKey]) lists[tomorrowKey] = makeDefaultState();
         if (!lists[tomorrowKey].unscheduled) lists[tomorrowKey].unscheduled = [];
-        lists[tomorrowKey].unscheduled.push({ text: taskText, done: false });
+        lists[tomorrowKey].unscheduled.push(normalizeTask({ id: li.dataset.taskId, text: taskText, done: false }, 'unscheduled', lists[tomorrowKey].unscheduled.length));
         saveAllLists(lists, [tomorrowKey]);
         li.remove();
         saveState();
@@ -1889,6 +2050,7 @@
       li.append(handle, cb, text, postponeBtn, postponeMenu, del);
 
       cb.addEventListener('change', () => {
+        li.dataset.changed = '1';
         text.classList.toggle('completed', cb.checked);
         const list = li.closest('.task-list');
         if (cb.checked) {
@@ -1904,7 +2066,10 @@
         }
         saveState();
       });
-      text.addEventListener('input', () => saveState());
+      text.addEventListener('input', () => {
+        li.dataset.changed = '1';
+        saveState();
+      });
       text.addEventListener('paste', e => {
         const pasted = e.clipboardData && e.clipboardData.getData('text');
         if (pasted && openPasteModal(text, pasted)) e.preventDefault();
@@ -1917,6 +2082,7 @@
           addTask(zone);
         } else if (e.key === 'Backspace' && text.value === '') {
           e.preventDefault();
+          markTaskDeleted({ id: li.dataset.taskId, text: text.value || task.text || '' });
           li.remove();
           saveState();
           const tasks = document.querySelectorAll(`.task-list[data-zone="${zone}"] .task-text`);
@@ -1924,6 +2090,7 @@
         }
       });
       del.addEventListener('click', () => {
+        markTaskDeleted({ id: li.dataset.taskId, text: text.value });
         li.remove();
         saveState();
       });
@@ -1968,6 +2135,7 @@
       this.style.opacity = '';
       document.querySelectorAll('.task-item').forEach(li => li.classList.remove('drag-over'));
       document.querySelectorAll('.zone, .unscheduled-section').forEach(z => z.classList.remove('drag-over-zone'));
+      this.dataset.changed = '1';
       saveState();
     }
     function handleDrop(e) {
@@ -1979,6 +2147,7 @@
       const allDst = Array.from(dstList.children);
       const insertBefore = allDst.indexOf(this);
       dstList.insertBefore(dragSrc, allDst[insertBefore] || null);
+      dragSrc.dataset.changed = '1';
       saveState();
     }
 
@@ -2004,6 +2173,7 @@
           if (e.target === list) {
             // Dropped on empty space within the list (not on a task item)
             list.appendChild(dragSrc);
+            dragSrc.dataset.changed = '1';
             saveState();
           }
         });
