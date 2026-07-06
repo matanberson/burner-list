@@ -1061,6 +1061,10 @@
     let _remoteChannel = null;
     let _remotePollTimer = null;
     const REMOTE_POLL_MS = 3000;
+    const DEVICE_ID_KEY = 'burner-device-id';
+    const TOMBSTONE_META_KEY = 'burner-delete-tombstone-meta';
+    const LOCAL_BACKUPS_KEY = 'burner-lists-backups';
+    const _deviceId = getDeviceId();
 
     // ── Storage helpers ───────────────────────────────────────────────
     function getAllLists() { return _listsCache; }
@@ -1068,6 +1072,104 @@
     function persistLocalLists(lists) {
       try { localStorage.setItem('burner-lists-local', JSON.stringify(lists)); } catch(e) {}
     }
+
+    function getDeviceId() {
+      let id = localStorage.getItem(DEVICE_ID_KEY);
+      if (!id) {
+        id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `device-${Date.now()}`;
+        localStorage.setItem(DEVICE_ID_KEY, id);
+      }
+      return id;
+    }
+
+    function nowIso() {
+      return new Date().toISOString();
+    }
+
+    function getStateUpdatedMs(state) {
+      const value = state && state._meta && state._meta.updatedAt;
+      const ms = value ? Date.parse(value) : 0;
+      return Number.isFinite(ms) ? ms : 0;
+    }
+
+    function touchState(state) {
+      const next = { ...(state || makeDefaultState()) };
+      next._meta = { ...(next._meta || {}), updatedAt: nowIso(), deviceId: _deviceId };
+      delete next._deleted;
+      return next;
+    }
+
+    function isRemoteTombstone(state) {
+      return Boolean(state && state._deleted === true);
+    }
+
+    function makeTombstoneState(key, timestamp = nowIso()) {
+      return {
+        date: getStateDate(key, _listsCache[key]),
+        _deleted: true,
+        _meta: { updatedAt: timestamp, deletedAt: timestamp, deviceId: _deviceId }
+      };
+    }
+
+    function loadDeleteTombstoneMeta() {
+      try {
+        return JSON.parse(localStorage.getItem(TOMBSTONE_META_KEY) || '{}') || {};
+      } catch(e) {
+        return {};
+      }
+    }
+
+    function getDeleteTombstoneMs(key) {
+      const meta = loadDeleteTombstoneMeta();
+      const ms = meta[key] ? Date.parse(meta[key]) : 0;
+      return Number.isFinite(ms) ? ms : 0;
+    }
+
+    function backupLocalLists(reason) {
+      try {
+        if (!Object.keys(_listsCache || {}).length) return;
+        const backups = JSON.parse(localStorage.getItem(LOCAL_BACKUPS_KEY) || '[]');
+        backups.unshift({ at: nowIso(), reason, lists: _listsCache, activeKey: getActiveKey() });
+        localStorage.setItem(LOCAL_BACKUPS_KEY, JSON.stringify(backups.slice(0, 20)));
+      } catch(e) {
+        console.warn('[backup] could not save local backup', e);
+      }
+    }
+
+    function stampUnversionedLocalLists() {
+      let changed = false;
+      Object.keys(_listsCache).forEach(key => {
+        const state = _listsCache[key];
+        if (!state || state._meta || isEmptyState(state)) return;
+        _listsCache[key] = touchState(state);
+        _dirtyKeys.add(key);
+        changed = true;
+      });
+      if (!changed) return;
+      persistLocalLists(_listsCache);
+      persistDirtyKeys();
+      _scheduleSync();
+    }
+
+    window.burnerBackups = () => {
+      try { return JSON.parse(localStorage.getItem(LOCAL_BACKUPS_KEY) || '[]'); }
+      catch(e) { return []; }
+    };
+
+    window.burnerRestoreBackup = index => {
+      const backup = window.burnerBackups()[index || 0];
+      if (!backup || !backup.lists) return false;
+      _listsCache = backup.lists;
+      Object.keys(_listsCache).forEach(k => {
+        if (!isEmptyState(_listsCache[k])) _dirtyKeys.add(k);
+      });
+      persistDirtyKeys();
+      persistLocalLists(_listsCache);
+      if (backup.activeKey) setActiveKey(backup.activeKey);
+      render();
+      _scheduleSync();
+      return true;
+    };
 
     function loadDirtyKeys() {
       try {
@@ -1097,14 +1199,26 @@
       return _deletedKeys.has(key) || _deleteTombstones.has(key);
     }
 
-    function tombstoneListKey(key) {
+    function tombstoneListKey(key, timestamp = nowIso()) {
       _deleteTombstones.add(key);
       persistDeleteTombstones();
+      try {
+        const meta = loadDeleteTombstoneMeta();
+        meta[key] = timestamp;
+        localStorage.setItem(TOMBSTONE_META_KEY, JSON.stringify(meta));
+      } catch(e) {}
     }
 
     function reviveListKey(key) {
       _deletedKeys.delete(key);
       if (_deleteTombstones.delete(key)) persistDeleteTombstones();
+      try {
+        const meta = loadDeleteTombstoneMeta();
+        if (meta[key]) {
+          delete meta[key];
+          localStorage.setItem(TOMBSTONE_META_KEY, JSON.stringify(meta));
+        }
+      } catch(e) {}
     }
 
     function hasInitializedRemote() {
@@ -1116,6 +1230,9 @@
     }
 
     function saveAllLists(lists, dirtyKeys = Object.keys(lists)) {
+      dirtyKeys.forEach(k => {
+        if (lists[k]) lists[k] = touchState(lists[k]);
+      });
       _listsCache = lists;
       persistLocalLists(lists);
       dirtyKeys.forEach(k => {
@@ -1149,13 +1266,19 @@
       if (_deletedKeys.size > 0) {
         const toDelete = [..._deletedKeys];
         _deletedKeys.clear();
-        const { error } = await _sb.from('burner_lists').delete()
-          .eq('user_id', _currentUser.id)
-          .in('date_key', toDelete);
+        const rows = toDelete.map(k => ({
+          user_id: _currentUser.id,
+          date_key: k,
+          state: makeTombstoneState(k)
+        }));
+        const { error } = await _sb.from('burner_lists')
+          .upsert(rows, { onConflict: 'user_id,date_key' });
         if (error) {
           toDelete.forEach(k => _deletedKeys.add(k));
           console.error(error);
           showToast('⚠️ Sync failed: ' + error.message);
+        } else {
+          markRemoteInitialized();
         }
       }
 
@@ -1236,7 +1359,30 @@
       const merged = {};
 
       Object.keys(remote).forEach(key => {
-        if (!isDeletedKey(key)) merged[key] = remote[key];
+        const remoteState = remote[key];
+        const localState = _listsCache[key];
+        if (isRemoteTombstone(remoteState)) {
+          if (!localState || getStateUpdatedMs(remoteState) >= getStateUpdatedMs(localState)) {
+            tombstoneListKey(key, remoteState._meta && remoteState._meta.updatedAt);
+            _deletedKeys.delete(key);
+            if (localState) changed = true;
+            return;
+          }
+          merged[key] = localState;
+          _dirtyKeys.add(key);
+          changed = true;
+          return;
+        }
+
+        if (isDeletedKey(key) && getDeleteTombstoneMs(key) >= getStateUpdatedMs(remoteState)) return;
+        if (localState && getStateUpdatedMs(localState) > getStateUpdatedMs(remoteState)) {
+          merged[key] = localState;
+          if (!isEmptyState(localState)) _dirtyKeys.add(key);
+          changed = true;
+          return;
+        }
+        reviveListKey(key);
+        merged[key] = remoteState;
       });
 
       Object.keys(_listsCache).forEach(key => {
@@ -1245,7 +1391,14 @@
           return;
         }
         if (isDeletedKey(key)) return;
-        if (!remote[key]) changed = true;
+        if (!remote[key]) {
+          merged[key] = _listsCache[key];
+          if (!isEmptyState(_listsCache[key])) {
+            _dirtyKeys.add(key);
+            persistDirtyKeys();
+            _scheduleSync();
+          }
+        }
       });
 
       Object.keys(merged).forEach(key => {
@@ -1253,10 +1406,12 @@
       });
 
       if (!changed) return false;
+      backupLocalLists('before-remote-snapshot');
       _listsCache = merged;
       Object.keys(remote).forEach(key => preferRemoteActiveForSameDate(key, remote[key]));
       normalizeActiveKey();
       persistLocalLists(_listsCache);
+      persistDirtyKeys();
       render();
       return true;
     }
@@ -1272,8 +1427,36 @@
       if (!_currentUser) return;
       if (!row || row.user_id !== _currentUser.id) return;
       const key = row.date_key;
-      if (_dirtyKeys.has(key) || isDeletedKey(key)) return;
+      if (isRemoteTombstone(row.state)) {
+        const localState = _listsCache[key];
+        if (localState && getStateUpdatedMs(localState) > getStateUpdatedMs(row.state)) {
+          _dirtyKeys.add(key);
+          persistDirtyKeys();
+          return;
+        }
+        backupLocalLists('before-remote-tombstone');
+        tombstoneListKey(key, row.state._meta && row.state._meta.updatedAt);
+        _deletedKeys.delete(key);
+        if (!localState) return;
+        const next = { ..._listsCache };
+        delete next[key];
+        _listsCache = next;
+        normalizeActiveKey();
+        persistLocalLists(_listsCache);
+        render();
+        return;
+      }
+      if (_dirtyKeys.has(key)) return;
+      if (isDeletedKey(key) && getDeleteTombstoneMs(key) >= getStateUpdatedMs(row.state)) return;
+      if (_listsCache[key] && getStateUpdatedMs(_listsCache[key]) > getStateUpdatedMs(row.state)) {
+        _dirtyKeys.add(key);
+        persistDirtyKeys();
+        _scheduleSync();
+        return;
+      }
       if (statesEqual(_listsCache[key], row.state)) return;
+      backupLocalLists('before-remote-upsert');
+      reviveListKey(key);
       _listsCache = { ..._listsCache, [key]: row.state };
       preferRemoteActiveForSameDate(key, row.state);
       normalizeActiveKey();
@@ -1286,6 +1469,7 @@
       if (!row || row.user_id !== _currentUser.id) return;
       const key = row.date_key;
       if (_dirtyKeys.has(key)) return;
+      if (_listsCache[key]) backupLocalLists('before-remote-delete');
       tombstoneListKey(key);
       _deletedKeys.delete(key);
       if (!_listsCache[key]) return;
@@ -1342,7 +1526,8 @@
     window.burnerDebug = () => {
       ensureRemoteSync();
       return {
-        build: 'sync-debug-2026-07-06-sync-audit',
+        build: 'sync-debug-2026-07-06-conflict-safe',
+        deviceId: _deviceId,
         userId: _currentUser && _currentUser.id,
         activeKey: getActiveKey(),
         activeDate: getStateDate(getActiveKey(), _listsCache[getActiveKey()]),
@@ -1350,6 +1535,7 @@
         dirtyKeys: [..._dirtyKeys],
         deletedKeys: [..._deletedKeys],
         deleteTombstones: [..._deleteTombstones],
+        backupCount: window.burnerBackups().length,
         remoteInitialized: hasInitializedRemote(),
         hasRemotePoll: Boolean(_remotePollTimer),
         hasRealtimeChannel: Boolean(_remoteChannel)
@@ -2077,6 +2263,7 @@
         const local = JSON.parse(localStorage.getItem('burner-lists-local') || 'null');
         if (local && Object.keys(local).length > 0) {
           _listsCache = local;
+          stampUnversionedLocalLists();
           const key = todayKey();
           if (!_listsCache[key]) _listsCache[key] = makeDefaultState();
           persistLocalLists(_listsCache);
@@ -2086,34 +2273,24 @@
         }
       } catch(e) {}
 
-      // Then load from Supabase and merge (Supabase wins on conflict)
+      // Then load from Supabase and merge by recency. Local non-empty rows are
+      // preserved and re-uploaded if Supabase is missing or older.
       const remote = await _loadAllLists();
       if (Object.keys(remote).length > 0) {
-        const dirtyDuringLoad = [..._dirtyKeys];
-        const localBeforeRemote = { ..._listsCache };
-        _listsCache = Object.fromEntries(
-          Object.entries(remote).filter(([key]) => !isDeletedKey(key))
-        );
-        dirtyDuringLoad.forEach(key => {
-          const localState = localBeforeRemote[key];
-          if (localState && !isDeletedKey(key)) _listsCache[key] = localState;
-        });
-        _dirtyKeys = new Set(dirtyDuringLoad.filter(key => _listsCache[key] && !isDeletedKey(key)));
-        persistDirtyKeys();
+        applyRemoteSnapshot(remote);
         markRemoteInitialized();
-        persistLocalLists(_listsCache);
       } else if (Object.keys(_listsCache).length > 0 && !hasInitializedRemote()) {
-        // Supabase empty but we have local data — push it up
         Object.keys(_listsCache).forEach(k => {
           if (!isEmptyState(_listsCache[k])) _dirtyKeys.add(k);
         });
         persistDirtyKeys();
         _scheduleSync();
-      } else if (hasInitializedRemote() && _dirtyKeys.size === 0 && _deletedKeys.size === 0) {
-        _listsCache = {};
-        _dirtyKeys.clear();
+      } else if (Object.keys(_listsCache).length > 0) {
+        Object.keys(_listsCache).forEach(k => {
+          if (!isEmptyState(_listsCache[k])) _dirtyKeys.add(k);
+        });
         persistDirtyKeys();
-        persistLocalLists(_listsCache);
+        _scheduleSync();
       }
 
       const key = todayKey();
