@@ -1468,22 +1468,32 @@
       return states;
     }
 
+    function timeoutAfter(ms, label) {
+      return new Promise(resolve => setTimeout(() => resolve({ timeout: true, label }), ms));
+    }
+
     async function loadListsV2(keys = null) {
       if (!_currentUser || _rowSyncAvailable === false) return null;
-      const { data: { session } } = await _sb.auth.getSession();
-      if (!session) { console.error('[load] no valid session'); return null; }
 
       let listQuery = _sb.from('burner_lists_v2')
         .select('key,date_key,front_name,back_name,quote,updated_at,deleted_at')
-        .eq('user_id', session.user.id);
+        .eq('user_id', _currentUser.id);
       let taskQuery = _sb.from('burner_tasks_v2')
         .select('id,list_key,zone,text,done,sort_order,updated_at,deleted_at')
-        .eq('user_id', session.user.id);
+        .eq('user_id', _currentUser.id);
       if (keys && keys.length) {
         listQuery = listQuery.in('key', keys);
         taskQuery = taskQuery.in('list_key', keys);
       }
-      const [{ data: lists, error: listError }, { data: tasks, error: taskError }] = await Promise.all([listQuery, taskQuery]);
+      const result = await Promise.race([
+        Promise.all([listQuery, taskQuery]),
+        timeoutAfter(8000, 'loadListsV2')
+      ]);
+      if (result && result.timeout) {
+        console.warn('[sync-v2] load timed out');
+        return null;
+      }
+      const [{ data: lists, error: listError }, { data: tasks, error: taskError }] = result;
       if (listError || taskError) {
         const error = listError || taskError;
         if (error && (error.code === '42P01' || /burner_.*_v2/.test(error.message || ''))) {
@@ -1894,7 +1904,7 @@
     window.burnerDebug = () => {
       ensureRemoteSync();
       return {
-        build: 'sync-debug-2026-07-06-debug-timeout',
+        build: 'sync-debug-2026-07-06-v2-no-session-lock',
         deviceId: _deviceId,
         rowSyncAvailable: _rowSyncAvailable,
         userId: _currentUser && _currentUser.id,
