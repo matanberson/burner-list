@@ -1068,6 +1068,14 @@
       try { localStorage.setItem('burner-lists-local', JSON.stringify(lists)); } catch(e) {}
     }
 
+    function hasInitializedRemote() {
+      return localStorage.getItem('burner-remote-initialized') === '1';
+    }
+
+    function markRemoteInitialized() {
+      localStorage.setItem('burner-remote-initialized', '1');
+    }
+
     function saveAllLists(lists, dirtyKeys = Object.keys(lists)) {
       _listsCache = lists;
       persistLocalLists(lists);
@@ -1116,6 +1124,7 @@
           const { error } = await _sb.from('burner_lists')
             .upsert(rows, { onConflict: 'user_id,date_key' });
           if (error) { keys.forEach(k => _dirtyKeys.add(k)); console.error(error); showToast('⚠️ Sync failed: ' + error.message); }
+          else { markRemoteInitialized(); }
         }
       }
 
@@ -1174,13 +1183,6 @@
       if (getStateDate(activeKey, activeState) === getStateDate(remoteKey, remoteState)) {
         setActiveKey(remoteKey);
       }
-    }
-
-    function markLocalOnlyListsForUpload(localLists, remoteLists) {
-      Object.keys(localLists || {}).forEach(key => {
-        if (!remoteLists[key] && !isEmptyState(localLists[key])) _dirtyKeys.add(key);
-      });
-      if (_dirtyKeys.size > 0) _scheduleSync();
     }
 
     function applyRemoteSnapshot(remote) {
@@ -1298,6 +1300,7 @@
         listKeys: Object.keys(_listsCache),
         dirtyKeys: [..._dirtyKeys],
         deletedKeys: [..._deletedKeys],
+        remoteInitialized: hasInitializedRemote(),
         hasRemotePoll: Boolean(_remotePollTimer),
         hasRealtimeChannel: Boolean(_remoteChannel)
       };
@@ -1305,7 +1308,13 @@
 
     function getActiveKey() { return localStorage.getItem('burner-active') || todayKey(); }
     function setActiveKey(key) { localStorage.setItem('burner-active', key); }
-    function todayKey() { return new Date().toISOString().slice(0, 10); }
+    function dateKeyFromDate(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+    function todayKey() { return dateKeyFromDate(new Date()); }
     function makeDefaultState(date) {
       return {
         date: date || todayKey(),
@@ -1608,7 +1617,7 @@
 
       const tomorrowKey = (() => {
         const d = new Date(); d.setDate(d.getDate() + 1);
-        return d.toISOString().slice(0, 10);
+        return dateKeyFromDate(d);
       })();
       const tomorrowLabel = new Date(tomorrowKey + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 
@@ -1937,7 +1946,7 @@
 
       const d = new Date(activeKey + 'T12:00:00');
       d.setDate(d.getDate() + 1);
-      const nextKey = d.toISOString().slice(0, 10);
+      const nextKey = dateKeyFromDate(d);
 
       const nextState = lists[nextKey] || makeDefaultState();
       if (!nextState.unscheduled) nextState.unscheduled = [];
@@ -2014,12 +2023,10 @@
       hideAuthOverlay();
 
       // Show local data immediately so the user never sees a blank app
-      let localBeforeRemote = {};
       try {
         const local = JSON.parse(localStorage.getItem('burner-lists-local') || 'null');
         if (local && Object.keys(local).length > 0) {
           _listsCache = local;
-          localBeforeRemote = { ...local };
           const key = todayKey();
           if (!_listsCache[key]) _listsCache[key] = makeDefaultState();
           persistLocalLists(_listsCache);
@@ -2032,14 +2039,20 @@
       // Then load from Supabase and merge (Supabase wins on conflict)
       const remote = await _loadAllLists();
       if (Object.keys(remote).length > 0) {
-        _listsCache = { ..._listsCache, ...remote };
-        markLocalOnlyListsForUpload(localBeforeRemote, remote);
-      } else if (Object.keys(_listsCache).length > 0) {
+        _listsCache = remote;
+        _dirtyKeys.clear();
+        markRemoteInitialized();
+        persistLocalLists(_listsCache);
+      } else if (Object.keys(_listsCache).length > 0 && !hasInitializedRemote()) {
         // Supabase empty but we have local data — push it up
         Object.keys(_listsCache).forEach(k => {
           if (!isEmptyState(_listsCache[k])) _dirtyKeys.add(k);
         });
         _scheduleSync();
+      } else if (hasInitializedRemote()) {
+        _listsCache = {};
+        _dirtyKeys.clear();
+        persistLocalLists(_listsCache);
       }
 
       const key = todayKey();
