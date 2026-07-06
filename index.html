@@ -1894,7 +1894,7 @@
     window.burnerDebug = () => {
       ensureRemoteSync();
       return {
-        build: 'sync-debug-2026-07-06-date-guard',
+        build: 'sync-debug-2026-07-06-debug-timeout',
         deviceId: _deviceId,
         rowSyncAvailable: _rowSyncAvailable,
         userId: _currentUser && _currentUser.id,
@@ -1914,14 +1914,44 @@
     window.burnerSyncDebug = async () => {
       const before = window.burnerDebug();
       let error = null;
+      let timedOut = false;
+      const timeout = new Promise(resolve => {
+        setTimeout(() => {
+          timedOut = true;
+          resolve('timeout');
+        }, 8000);
+      });
       try {
-        await refreshFromRemote();
+        await Promise.race([refreshFromRemote(), timeout]);
       } catch(e) {
         error = e && (e.message || String(e));
         console.error('[sync-debug] refresh failed', e);
       }
       const after = window.burnerDebug();
-      return { before, after, error };
+      return { before, after, timedOut, error };
+    };
+
+    window.burnerProbeV2 = async () => {
+      const before = window.burnerDebug();
+      let result = null;
+      let error = null;
+      try {
+        result = await Promise.race([
+          loadListsV2(),
+          new Promise(resolve => setTimeout(() => resolve('timeout'), 8000))
+        ]);
+      } catch(e) {
+        error = e && (e.message || String(e));
+        console.error('[sync-debug] v2 probe failed', e);
+      }
+      const after = window.burnerDebug();
+      return {
+        before,
+        after,
+        resultType: result === 'timeout' ? 'timeout' : (result === null ? 'fallback-null' : 'states'),
+        resultKeys: result && result !== 'timeout' ? Object.keys(result) : [],
+        error
+      };
     };
 
     function getActiveKey() { return localStorage.getItem('burner-active') || todayKey(); }
