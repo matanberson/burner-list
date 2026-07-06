@@ -1435,7 +1435,7 @@
       (listRows || []).forEach(row => {
         if (row.deleted_at) return;
         states[row.key] = {
-          date: row.date_key || row.key,
+          date: safeDateKey(row.date_key, isDateKey(row.key) ? row.key : todayKey()),
           'front-burner': { name: row.front_name || '', tasks: [] },
           'back-burner': { name: row.back_name || '', tasks: [] },
           'kitchen-sink': { name: '', tasks: [] },
@@ -1692,15 +1692,15 @@
       const activeKey = getActiveKey();
       if (_listsCache[activeKey]) return;
       const keys = Object.keys(_listsCache).sort((a, b) => {
-        const da = (_listsCache[a] && _listsCache[a].date) || (a.length === 10 ? a : '0');
-        const db = (_listsCache[b] && _listsCache[b].date) || (b.length === 10 ? b : '0');
+        const da = safeDateKey(_listsCache[a] && _listsCache[a].date, isDateKey(a) ? a : '0');
+        const db = safeDateKey(_listsCache[b] && _listsCache[b].date, isDateKey(b) ? b : '0');
         return db.localeCompare(da);
       });
       setActiveKey(keys[0] || todayKey());
     }
 
     function getStateDate(key, state) {
-      return (state && state.date) || (key && key.length === 10 ? key : todayKey());
+      return safeDateKey(state && state.date, isDateKey(key) ? key : todayKey());
     }
 
     function isEmptyState(state) {
@@ -1894,7 +1894,7 @@
     window.burnerDebug = () => {
       ensureRemoteSync();
       return {
-        build: 'sync-debug-2026-07-06-row-sync-debug',
+        build: 'sync-debug-2026-07-06-date-guard',
         deviceId: _deviceId,
         rowSyncAvailable: _rowSyncAvailable,
         userId: _currentUser && _currentUser.id,
@@ -1926,6 +1926,12 @@
 
     function getActiveKey() { return localStorage.getItem('burner-active') || todayKey(); }
     function setActiveKey(key) { localStorage.setItem('burner-active', key); }
+    function isDateKey(value) {
+      return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);
+    }
+    function safeDateKey(value, fallback = todayKey()) {
+      return isDateKey(value) ? value : fallback;
+    }
     function dateKeyFromDate(date) {
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -2032,7 +2038,7 @@
     function getListDate(key) {
       const lists = getAllLists();
       const state = lists[key];
-      return (state && state.date) || (key.length === 10 ? key : todayKey());
+      return getStateDate(key, state);
     }
     function updateDateDisplay() {
       document.getElementById('dateDisplay').textContent = formatDateKey(getListDate(getActiveKey()));
