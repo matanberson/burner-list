@@ -1894,7 +1894,7 @@
     window.burnerDebug = () => {
       ensureRemoteSync();
       return {
-        build: 'sync-debug-2026-07-06-row-sync-adapter',
+        build: 'sync-debug-2026-07-06-row-sync-debug',
         deviceId: _deviceId,
         rowSyncAvailable: _rowSyncAvailable,
         userId: _currentUser && _currentUser.id,
@@ -1909,6 +1909,19 @@
         hasRemotePoll: Boolean(_remotePollTimer),
         hasRealtimeChannel: Boolean(_remoteChannel)
       };
+    };
+
+    window.burnerSyncDebug = async () => {
+      const before = window.burnerDebug();
+      let error = null;
+      try {
+        await refreshFromRemote();
+      } catch(e) {
+        error = e && (e.message || String(e));
+        console.error('[sync-debug] refresh failed', e);
+      }
+      const after = window.burnerDebug();
+      return { before, after, error };
     };
 
     function getActiveKey() { return localStorage.getItem('burner-active') || todayKey(); }
