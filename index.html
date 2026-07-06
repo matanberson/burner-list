@@ -1410,9 +1410,15 @@
         const keys = [..._dirtyKeys];
         _dirtyKeys.clear();
         persistDirtyKeys();
+        const remoteBeforeWrite = await _loadListsByKeys(keys);
         const rows = keys
           .filter(k => _listsCache[k])
-          .map(k => ({ user_id: _currentUser.id, date_key: k, state: _listsCache[k] }));
+          .map(k => {
+            if (remoteBeforeWrite[k] && !isRemoteTombstone(remoteBeforeWrite[k])) {
+              _listsCache[k] = touchState(mergeListStates(_listsCache[k], remoteBeforeWrite[k]));
+            }
+            return { user_id: _currentUser.id, date_key: k, state: _listsCache[k] };
+          });
         if (rows.length) {
           const { error } = await _sb.from('burner_lists')
             .upsert(rows, { onConflict: 'user_id,date_key' });
@@ -1433,6 +1439,20 @@
         .select('date_key, state').eq('user_id', session.user.id);
       if (error) { console.error('Load error:', error); showToast('⚠️ Load failed: ' + error.message); return {}; }
       console.log('[load] Loaded', data.length, 'rows from Supabase');
+      const result = {};
+      data.forEach(r => { result[r.date_key] = r.state; });
+      return result;
+    }
+
+    async function _loadListsByKeys(keys) {
+      if (!_currentUser || !keys.length) return {};
+      const { data: { session } } = await _sb.auth.getSession();
+      if (!session) { console.error('[load] no valid session'); return {}; }
+      const { data, error } = await _sb.from('burner_lists')
+        .select('date_key, state')
+        .eq('user_id', session.user.id)
+        .in('date_key', keys);
+      if (error) { console.error('Load error:', error); showToast('⚠️ Load failed: ' + error.message); return {}; }
       const result = {};
       data.forEach(r => { result[r.date_key] = r.state; });
       return result;
@@ -1507,7 +1527,7 @@
 
       Object.keys(_listsCache).forEach(key => {
         if (_dirtyKeys.has(key)) {
-          merged[key] = _listsCache[key];
+          if (!merged[key]) merged[key] = _listsCache[key];
           return;
         }
         if (isDeletedKey(key)) return;
@@ -1538,9 +1558,9 @@
 
     async function refreshFromRemote() {
       if (!_currentUser) return;
-      if (_dirtyKeys.size > 0 || _deletedKeys.size > 0) await _flushSync();
       const remote = await _loadAllLists();
       applyRemoteSnapshot(remote);
+      if (_dirtyKeys.size > 0 || _deletedKeys.size > 0) await _flushSync();
     }
 
     function applyRemoteUpsert(row) {
@@ -1646,7 +1666,7 @@
     window.burnerDebug = () => {
       ensureRemoteSync();
       return {
-        build: 'sync-debug-2026-07-06-task-merge',
+        build: 'sync-debug-2026-07-06-merge-before-write',
         deviceId: _deviceId,
         userId: _currentUser && _currentUser.id,
         activeKey: getActiveKey(),
