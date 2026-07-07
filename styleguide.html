@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Burner List Styleguide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #e8e0d4;
+      --paper: #fffdf7;
+      --border: #e8e2d9;
+      --border-strong: #d6d0c6;
+      --text-dark: #3a3530;
+      --text-mid: #6b6258;
+      --text-soft: #c0afa7;
+      --text-faint: #b5ad9f;
+      --text-faintest: #c5b9b0;
+      --hover-tint: rgba(180,165,140,0.08);
+      --hover-tint-strong: rgba(180,165,140,0.18);
+      --danger: #b04040;
+      --success: #6f8a54;
+      --shadow-soft: 0 16px 42px rgba(58, 53, 48, 0.08);
+      --shadow-popover: 0 8px 28px rgba(58, 53, 48, 0.12);
+      --radius-xs: 4px;
+      --radius-sm: 5px;
+      --radius-md: 6px;
+      --radius-lg: 8px;
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-8: 32px;
+      --space-10: 40px;
+    }
+
+    [data-theme="sage"] {
+      --bg: #dde4d8;
+      --paper: #fbfcf8;
+      --border: #e2e8dd;
+      --border-strong: #c9d3c2;
+      --text-dark: #333a2f;
+      --text-mid: #5d6b54;
+      --text-soft: #8a9580;
+      --text-faint: #a8b29e;
+      --text-faintest: #bcc6b3;
+      --hover-tint: rgba(140,165,120,0.08);
+      --hover-tint-strong: rgba(140,165,120,0.18);
+    }
+
+    [data-theme="slate"] {
+      --bg: #dde3e6;
+      --paper: #f8fafb;
+      --border: #e1e7ea;
+      --border-strong: #c3ced3;
+      --text-dark: #2f3a3e;
+      --text-mid: #54676d;
+      --text-soft: #80949a;
+      --text-faint: #9eb0b5;
+      --text-faintest: #b3c2c6;
+      --hover-tint: rgba(120,150,160,0.08);
+      --hover-tint-strong: rgba(120,150,160,0.18);
+    }
+
+    [data-theme="clay"] {
+      --bg: #ead9d0;
+      --paper: #fdf8f5;
+      --border: #ece0d8;
+      --border-strong: #d9c4b6;
+      --text-dark: #3e2f28;
+      --text-mid: #6e564a;
+      --text-soft: #9c8276;
+      --text-faint: #b59c8e;
+      --text-faintest: #c8b1a4;
+      --hover-tint: rgba(180,140,120,0.08);
+      --hover-tint-strong: rgba(180,140,120,0.18);
+    }
+
+    [data-theme="lavender"] {
+      --bg: #e2dde8;
+      --paper: #faf8fc;
+      --border: #e6e1ec;
+      --border-strong: #cfc5d8;
+      --text-dark: #352f3c;
+      --text-mid: #61566d;
+      --text-soft: #8c8198;
+      --text-faint: #a89db3;
+      --text-faintest: #bcb0c6;
+      --hover-tint: rgba(150,130,170,0.08);
+      --hover-tint-strong: rgba(150,130,170,0.18);
+    }
+
+    body {
+      min-height: 100vh;
+      background: var(--paper);
+      color: var(--text-dark);
+      font-family: Inter, sans-serif;
+      line-height: 1.45;
+    }
+
+    .page {
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    .nav {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: var(--space-8) var(--space-5);
+      border-right: 1px solid var(--border);
+      background: var(--paper);
+      overflow-y: auto;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin-bottom: var(--space-8);
+    }
+
+    .brand-mark {
+      width: 38px;
+      height: 38px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-lg);
+      display: grid;
+      place-items: center;
+      background: var(--hover-tint);
+    }
+
+    .brand h1 {
+      font-family: Caveat, cursive;
+      font-size: 28px;
+      line-height: 1;
+    }
+
+    .brand p {
+      font-size: 12px;
+      color: var(--text-soft);
+      margin-top: 2px;
+    }
+
+    .nav a {
+      display: block;
+      color: var(--text-mid);
+      text-decoration: none;
+      font-size: 13px;
+      padding: 7px 0;
+    }
+
+    .nav a:hover { color: var(--text-dark); }
+
+    .content {
+      padding: var(--space-10);
+      max-width: 1180px;
+    }
+
+    .hero {
+      max-width: 820px;
+      margin-bottom: 44px;
+    }
+
+    .eyebrow {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-mid);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: var(--space-3);
+    }
+
+    .hero h2 {
+      font-family: Caveat, cursive;
+      font-size: 48px;
+      line-height: 0.95;
+      margin-bottom: var(--space-4);
+    }
+
+    .hero p {
+      font-size: 16px;
+      color: var(--text-mid);
+      max-width: 680px;
+    }
+
+    section {
+      margin-bottom: 48px;
+      scroll-margin-top: 24px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: var(--space-6);
+      margin-bottom: var(--space-5);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: var(--space-3);
+    }
+
+    .section-head h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-dark);
+    }
+
+    .section-head p {
+      font-size: 13px;
+      color: var(--text-soft);
+      max-width: 520px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-5);
+    }
+
+    .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+    .spec-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: var(--paper);
+      padding: var(--space-5);
+    }
+
+    .sample {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      background: linear-gradient(180deg, var(--paper), rgba(255,255,255,0.5));
+    }
+
+    .label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-faint);
+      margin-bottom: var(--space-3);
+    }
+
+    .token-row {
+      display: grid;
+      grid-template-columns: 110px minmax(0, 1fr) 92px;
+      gap: var(--space-3);
+      align-items: center;
+      font-size: 12px;
+      color: var(--text-mid);
+      padding: 7px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .token-row:last-child { border-bottom: none; }
+
+    .swatch {
+      height: 28px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-strong);
+    }
+
+    .theme-strip {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: var(--space-3);
+    }
+
+    .theme-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4);
+      background: var(--paper);
+    }
+
+    .theme-card .theme-chip {
+      height: 46px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-strong);
+      margin-bottom: var(--space-3);
+      background: var(--bg);
+    }
+
+    .theme-card strong {
+      display: block;
+      font-size: 13px;
+      color: var(--text-dark);
+    }
+
+    .theme-card span {
+      font-size: 11px;
+      color: var(--text-soft);
+    }
+
+    .type-title {
+      font-family: Caveat, cursive;
+      font-size: 36px;
+      line-height: 1;
+      margin-bottom: var(--space-2);
+    }
+
+    .type-ui { font-size: 14px; color: var(--text-dark); }
+    .type-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-mid);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+    .type-muted { font-size: 13px; color: var(--text-soft); }
+
+    .button-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: var(--space-3);
+    }
+
+    button {
+      font-family: Inter, sans-serif;
+    }
+
+    .btn-primary {
+      background: var(--text-mid);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .btn-primary:hover { opacity: 0.88; }
+
+    .btn-secondary {
+      background: none;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      color: var(--text-mid);
+      padding: 8px 12px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .btn-secondary:hover { background: var(--hover-tint); }
+
+    .btn-ghost {
+      background: none;
+      border: none;
+      color: var(--text-faint);
+      font-size: 13px;
+      cursor: pointer;
+      padding: 6px 4px;
+    }
+
+    .btn-ghost:hover { color: var(--text-mid); }
+
+    .icon-btn {
+      background: none;
+      border: none;
+      color: var(--text-faint);
+      cursor: pointer;
+      padding: 4px;
+      line-height: 1;
+    }
+
+    .icon-btn:hover { color: var(--text-mid); }
+
+    .paper {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xs);
+      overflow: hidden;
+      background: var(--paper);
+    }
+
+    .columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: 360px;
+    }
+
+    .column { display: flex; flex-direction: column; }
+    .column:first-child { border-right: 1px solid var(--border); }
+    .zone {
+      padding: var(--space-8);
+      border-top: 1px solid var(--border);
+      flex: 1;
+    }
+    .column:first-child .zone:first-child,
+    .column:last-child .zone:first-child { border-top: none; }
+
+    .zone-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-mid);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: var(--space-2);
+    }
+
+    .project-name {
+      display: block;
+      width: 100%;
+      background: none;
+      border: none;
+      border-bottom: 1.5px solid var(--border-strong);
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-dark);
+      padding: 4px 0;
+      margin-bottom: var(--space-3);
+      outline: none;
+    }
+
+    .project-name::placeholder { color: var(--text-faint); font-weight: 400; }
+
+    .task-list {
+      list-style: none;
+      margin-bottom: 4px;
+    }
+
+    .task-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 8px 7px 4px;
+      border-radius: var(--radius-sm);
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+
+    .task-item:last-child { border-bottom: none; }
+    .task-item:hover { background: var(--hover-tint); }
+
+    .drag-handle,
+    .postpone-btn,
+    .delete-btn {
+      color: var(--text-faintest);
+      background: none;
+      border: none;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .task-item input[type="checkbox"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      border: 1.5px solid var(--text-faint);
+      border-radius: 50%;
+      background: transparent;
+      position: relative;
+    }
+
+    .task-item input[type="checkbox"]:checked {
+      background: var(--text-mid);
+      border-color: var(--text-mid);
+    }
+
+    .task-item input[type="checkbox"]:checked::after {
+      content: "";
+      position: absolute;
+      left: 4px;
+      top: 1px;
+      width: 5px;
+      height: 8px;
+      border: 2px solid #fff;
+      border-top: none;
+      border-left: none;
+      transform: rotate(45deg);
+    }
+
+    .task-text {
+      flex: 1;
+      border: none;
+      background: none;
+      font-size: 14px;
+      color: var(--text-dark);
+      outline: none;
+      min-width: 0;
+    }
+
+    .task-text.completed {
+      text-decoration: line-through;
+      color: var(--text-faint);
+    }
+
+    .add-task-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: none;
+      border: none;
+      color: var(--text-faint);
+      font-size: 13px;
+      cursor: pointer;
+      padding: 6px 4px 6px 24px;
+      margin-top: 2px;
+    }
+
+    .plus {
+      width: 16px;
+      height: 16px;
+      border: 1.5px solid currentColor;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      line-height: 1;
+    }
+
+    .sidebar-demo {
+      width: 300px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      background: var(--paper);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .sidebar-header {
+      padding: 24px 20px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-header h4 {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .sidebar-list-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-list-item.active { background: var(--hover-tint-strong); }
+    .sidebar-list-item:hover { background: var(--hover-tint); }
+    .list-date { font-size: 14px; font-weight: 500; color: var(--text-dark); }
+    .list-preview { font-size: 11px; color: var(--text-faint); margin-top: 2px; }
+
+    .quote-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xs);
+      padding: var(--space-5) var(--space-8);
+      background: var(--paper);
+    }
+
+    .quote-banner-text {
+      font-size: 18px;
+      font-style: italic;
+      color: var(--text-mid);
+      line-height: 1.3;
+    }
+
+    .modal-spec {
+      max-width: 420px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: var(--paper);
+      padding: var(--space-6);
+      box-shadow: var(--shadow-popover);
+    }
+
+    .modal-spec h4 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: var(--space-3);
+    }
+
+    .modal-body {
+      font-size: 14px;
+      color: var(--text-mid);
+      line-height: 1.45;
+      margin-bottom: var(--space-4);
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: var(--space-2);
+      flex-wrap: wrap;
+    }
+
+    .form-field {
+      width: 100%;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-md);
+      padding: 10px;
+      background: var(--paper);
+      color: var(--text-mid);
+      font: inherit;
+      resize: vertical;
+      min-height: 82px;
+      margin-bottom: var(--space-3);
+    }
+
+    .toast-demo {
+      display: inline-flex;
+      align-items: center;
+      background: var(--text-dark);
+      color: #fff;
+      font-size: 13px;
+      padding: 10px 20px;
+      border-radius: var(--radius-md);
+    }
+
+    .usage {
+      border-left: 3px solid var(--border-strong);
+      padding-left: var(--space-4);
+      color: var(--text-mid);
+      font-size: 14px;
+    }
+
+    .usage strong { color: var(--text-dark); }
+
+    .do-dont {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-5);
+    }
+
+    .do-dont ul {
+      margin-left: var(--space-5);
+      color: var(--text-mid);
+      font-size: 14px;
+    }
+
+    .do-dont li { margin-bottom: var(--space-2); }
+
+    code {
+      border: 1px solid var(--border);
+      background: var(--hover-tint);
+      border-radius: var(--radius-xs);
+      padding: 2px 5px;
+      color: var(--text-dark);
+      font-size: 12px;
+    }
+
+    @media (max-width: 900px) {
+      .page { grid-template-columns: 1fr; }
+      .nav {
+        position: static;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+      .content { padding: var(--space-6); }
+      .grid, .grid.three, .theme-strip, .do-dont { grid-template-columns: 1fr; }
+      .columns { grid-template-columns: 1fr; }
+      .column:first-child { border-right: none; border-bottom: 1px solid var(--border); }
+      .hero h2 { font-size: 40px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <aside class="nav">
+      <div class="brand">
+        <div class="brand-mark"><i data-lucide="flame"></i></div>
+        <div>
+          <h1>Burner List</h1>
+          <p>Styleguide v0.1</p>
+        </div>
+      </div>
+      <a href="#principles">Design Principles</a>
+      <a href="#tokens">Tokens</a>
+      <a href="#themes">Themes</a>
+      <a href="#typography">Typography</a>
+      <a href="#buttons">Buttons</a>
+      <a href="#tasks">Task System</a>
+      <a href="#layout">List Layout</a>
+      <a href="#navigation">Navigation</a>
+      <a href="#feedback">Feedback</a>
+      <a href="#claude">Claude Design Brief</a>
+    </aside>
+
+    <main class="content">
+      <header class="hero">
+        <div class="eyebrow">Product Direction</div>
+        <h2>A quiet daily planner with paper-like constraints.</h2>
+        <p>Burner List should feel focused, warm, and low-friction. The interface is an operational tool, but not a corporate dashboard: it should have the calm of paper, the precision of a task app, and just enough charm to make daily prioritization feel humane.</p>
+      </header>
+
+      <section id="principles">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">01</div>
+            <h3>Design Principles</h3>
+          </div>
+          <p>Use these as decision filters when Claude Design or future app work proposes changes.</p>
+        </div>
+        <div class="grid">
+          <div class="spec-card usage"><strong>Focused over complete.</strong><br>The app should help users choose what matters today, not expose every possible productivity feature at once.</div>
+          <div class="spec-card usage"><strong>Paper calm, app precision.</strong><br>Keep surfaces restrained and readable, but make interactions crisp, synced, and forgiving.</div>
+          <div class="spec-card usage"><strong>Dense enough for real work.</strong><br>Avoid marketing-style hero layouts inside the app. Prioritize scanning, editing, and repeated daily use.</div>
+          <div class="spec-card usage"><strong>Charm in details.</strong><br>Use the handwritten title, soft themes, quotes, and subtle motion sparingly. The task list remains the center.</div>
+        </div>
+      </section>
+
+      <section id="tokens">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">02</div>
+            <h3>Core Tokens</h3>
+          </div>
+          <p>The current system is token-driven through CSS variables. Preserve semantic token names even if values change.</p>
+        </div>
+        <div class="grid">
+          <div class="spec-card">
+            <div class="label">Color Tokens</div>
+            <div class="token-row"><span>paper</span><div class="swatch" style="background:#fffdf7"></div><code>#fffdf7</code></div>
+            <div class="token-row"><span>bg</span><div class="swatch" style="background:#e8e0d4"></div><code>#e8e0d4</code></div>
+            <div class="token-row"><span>border</span><div class="swatch" style="background:#e8e2d9"></div><code>#e8e2d9</code></div>
+            <div class="token-row"><span>border-strong</span><div class="swatch" style="background:#d6d0c6"></div><code>#d6d0c6</code></div>
+            <div class="token-row"><span>text-dark</span><div class="swatch" style="background:#3a3530"></div><code>#3a3530</code></div>
+            <div class="token-row"><span>text-mid</span><div class="swatch" style="background:#6b6258"></div><code>#6b6258</code></div>
+            <div class="token-row"><span>text-soft</span><div class="swatch" style="background:#c0afa7"></div><code>#c0afa7</code></div>
+          </div>
+          <div class="spec-card">
+            <div class="label">Shape + Spacing</div>
+            <div class="token-row"><span>radius-xs</span><div>Paper, quote panels</div><code>4px</code></div>
+            <div class="token-row"><span>radius-sm</span><div>Task hover, small buttons</div><code>5px</code></div>
+            <div class="token-row"><span>radius-md</span><div>Inputs, menus</div><code>6px</code></div>
+            <div class="token-row"><span>radius-lg</span><div>Modals, cards</div><code>8px</code></div>
+            <div class="token-row"><span>space-2</span><div>Small gaps</div><code>8px</code></div>
+            <div class="token-row"><span>space-5</span><div>Card padding</div><code>20px</code></div>
+            <div class="token-row"><span>space-10</span><div>Zone padding</div><code>40px</code></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="themes">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">03</div>
+            <h3>Themes</h3>
+          </div>
+          <p>Themes are quiet tonal shifts. They should not change component hierarchy or interaction patterns.</p>
+        </div>
+        <div class="theme-strip">
+          <div class="theme-card"><div class="theme-chip" style="background:#e8e0d4"></div><strong>Sand</strong><span>Default, warm paper</span></div>
+          <div class="theme-card" data-theme="sage"><div class="theme-chip"></div><strong>Sage</strong><span>Soft green focus</span></div>
+          <div class="theme-card" data-theme="slate"><div class="theme-chip"></div><strong>Slate</strong><span>Cool neutral</span></div>
+          <div class="theme-card" data-theme="clay"><div class="theme-chip"></div><strong>Clay</strong><span>Warm rose</span></div>
+          <div class="theme-card" data-theme="lavender"><div class="theme-chip"></div><strong>Lavender</strong><span>Muted purple</span></div>
+        </div>
+      </section>
+
+      <section id="typography">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">04</div>
+            <h3>Typography</h3>
+          </div>
+          <p>Inter carries the app. Caveat is used as a product signature, not as body copy.</p>
+        </div>
+        <div class="grid three">
+          <div class="spec-card"><div class="label">Brand</div><div class="type-title">Burner List</div><p class="type-muted">Caveat, 26-48px, 700</p></div>
+          <div class="spec-card"><div class="label">UI Text</div><p class="type-ui">Project names, task input text, button labels, and body copy use Inter for clarity.</p><p class="type-muted">Inter, 13-16px</p></div>
+          <div class="spec-card"><div class="label">Section Label</div><p class="type-label">Front Burner</p><p class="type-muted">Uppercase, 11px, 0.6px letter spacing</p></div>
+        </div>
+      </section>
+
+      <section id="buttons">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">05</div>
+            <h3>Buttons + Actions</h3>
+          </div>
+          <p>Use text buttons for commands and lucide icons for compact row actions.</p>
+        </div>
+        <div class="sample">
+          <div class="button-row">
+            <button class="btn-primary">+ New List</button>
+            <button class="btn-secondary">Export</button>
+            <button class="btn-ghost"><span class="plus">+</span> Add task</button>
+            <button class="icon-btn" title="Edit"><i data-lucide="pencil"></i></button>
+            <button class="icon-btn" title="Delete"><i data-lucide="trash-2"></i></button>
+          </div>
+        </div>
+      </section>
+
+      <section id="tasks">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">06</div>
+            <h3>Task System</h3>
+          </div>
+          <p>Rows are lightweight. Controls appear subtly, with the task text remaining dominant.</p>
+        </div>
+        <div class="grid">
+          <div class="sample">
+            <div class="label">Task Rows</div>
+            <ul class="task-list">
+              <li class="task-item">
+                <span class="drag-handle"><i data-lucide="grip-vertical"></i></span>
+                <input type="checkbox">
+                <input class="task-text" value="Write launch notes">
+                <button class="postpone-btn"><i data-lucide="calendar"></i></button>
+                <button class="delete-btn"><i data-lucide="x"></i></button>
+              </li>
+              <li class="task-item">
+                <span class="drag-handle"><i data-lucide="grip-vertical"></i></span>
+                <input type="checkbox" checked>
+                <input class="task-text completed" value="Review sync behavior">
+                <button class="postpone-btn"><i data-lucide="calendar"></i></button>
+                <button class="delete-btn"><i data-lucide="x"></i></button>
+              </li>
+            </ul>
+            <button class="add-task-btn"><span class="plus">+</span> Add task</button>
+          </div>
+          <div class="sample">
+            <div class="label">Paste Choice Dialog</div>
+            <div class="modal-spec">
+              <h4>Paste tasks</h4>
+              <div class="modal-body">This paste has 3 lines. Add each line as its own task, or keep everything in one task?</div>
+              <div class="modal-actions">
+                <button class="btn-secondary">Cancel</button>
+                <button class="btn-secondary">Single task</button>
+                <button class="btn-primary">Multiple tasks</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="layout">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">07</div>
+            <h3>Burner List Layout</h3>
+          </div>
+          <p>The two-column paper layout is the core product object. It should remain immediately recognizable.</p>
+        </div>
+        <div class="paper">
+          <div class="columns">
+            <div class="column">
+              <div class="zone">
+                <div class="zone-label">Front Burner</div>
+                <input class="project-name" value="Most important project">
+                <ul class="task-list">
+                  <li class="task-item"><input type="checkbox"><input class="task-text" value="Define the next app architecture"></li>
+                  <li class="task-item"><input type="checkbox"><input class="task-text" value="Sketch Today view"></li>
+                </ul>
+              </div>
+            </div>
+            <div class="column">
+              <div class="zone">
+                <div class="zone-label">Back Burner</div>
+                <input class="project-name" value="Secondary priority">
+                <ul class="task-list"><li class="task-item"><input type="checkbox"><input class="task-text" value="Plan iOS wrapper"></li></ul>
+              </div>
+              <div class="zone">
+                <div class="zone-label">Kitchen Sink</div>
+                <ul class="task-list"><li class="task-item"><input type="checkbox"><input class="task-text" value="Small tasks and errands"></li></ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="navigation">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">08</div>
+            <h3>Navigation + Supporting Surfaces</h3>
+          </div>
+          <p>The sidebar is utilitarian and compact. Avoid turning it into a decorative panel.</p>
+        </div>
+        <div class="grid">
+          <div class="sidebar-demo">
+            <div class="sidebar-header">
+              <h4>My Lists</h4>
+              <button class="btn-primary">+ New</button>
+            </div>
+            <div class="sidebar-list-item active">
+              <div><div class="list-date">5 Jul · Sunday</div><div class="list-preview">4 tasks</div></div>
+              <button class="icon-btn"><i data-lucide="x"></i></button>
+            </div>
+            <div class="sidebar-list-item">
+              <div><div class="list-date">4 Jul · Saturday</div><div class="list-preview">Rescheduled</div></div>
+              <button class="icon-btn"><i data-lucide="x"></i></button>
+            </div>
+          </div>
+          <div class="sample">
+            <div class="label">Quote Panel</div>
+            <div class="quote-box">
+              <div class="quote-banner-text">"Make it easier to do what matters."</div>
+              <div class="button-row">
+                <button class="icon-btn"><i data-lucide="pencil"></i></button>
+                <button class="icon-btn"><i data-lucide="trash-2"></i></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="feedback">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">09</div>
+            <h3>Feedback + States</h3>
+          </div>
+          <p>Feedback should be short, calm, and out of the user's way.</p>
+        </div>
+        <div class="grid three">
+          <div class="spec-card"><div class="label">Toast</div><div class="toast-demo">3 tasks pasted</div></div>
+          <div class="spec-card"><div class="label">Sync Badge</div><div class="toast-demo" style="background:var(--text-mid)">Saving...</div></div>
+          <div class="spec-card"><div class="label">Danger</div><button class="btn-secondary" style="color:var(--danger)">Delete list</button></div>
+        </div>
+      </section>
+
+      <section id="claude">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">10</div>
+            <h3>Claude Design Brief</h3>
+          </div>
+          <p>A concise handoff brief for improving the design while preserving product identity.</p>
+        </div>
+        <div class="do-dont">
+          <div class="spec-card">
+            <div class="label">Do</div>
+            <ul>
+              <li>Preserve the paper-like Burner List as the central object.</li>
+              <li>Use restrained, legible UI patterns suitable for repeated daily editing.</li>
+              <li>Strengthen component consistency: buttons, rows, modals, sidebar, menus.</li>
+              <li>Improve mobile ergonomics and iOS standalone app feel.</li>
+              <li>Use icons for compact tools and text for clear commands.</li>
+            </ul>
+          </div>
+          <div class="spec-card">
+            <div class="label">Do Not</div>
+            <ul>
+              <li>Do not make it look like a marketing landing page.</li>
+              <li>Do not bury tasks inside decorative cards or heavy chrome.</li>
+              <li>Do not overuse gradients, oversized type, or playful illustrations.</li>
+              <li>Do not remove the constraint-driven Front/Back/Kitchen Sink hierarchy.</li>
+              <li>Do not introduce a one-note color palette that loses the theme system.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    if (window.lucide) lucide.createIcons();
+  </script>
+</body>
+</html>
