@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "thresholds": {
+    "lowMaximum": 24,
+    "mediumMaximum": 64
+  },
+  "alwaysHumanReview": [
+    ".github/**",
+    "supabase/migrations/**",
+    "**/*auth*",
+    "**/*oauth*",
+    "**/*secret*",
+    "**/*token*",
+    "**/*.entitlements",
+    "wrangler.toml",
+    "scripts/deploy.sh"
+  ],
+  "operationsFiles": [
+    ".github/**",
+    "sw.js",
+    "wrangler.toml",
+    "scripts/deploy.sh",
+    "manifest.webmanifest"
+  ],
+  "dataFiles": [
+    "supabase/**",
+    "ios/BurnerList/Data/**"
+  ],
+  "testFiles": [
+    "**/*test*",
+    "**/*spec*",
+    "ios/BurnerListTests/**"
+  ],
+  "docsOnlyFiles": [
+    "**/*.md",
+    "docs/**",
+    "design_handoff_burnerlist/**"
+  ],
+  "generatedFiles": [
+    "assets/generated/**",
+    "ios/BurnerList/DesignSystem/*generated*"
+  ]
+}
