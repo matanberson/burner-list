@@ -2,3 +2,12 @@ node_modules
 .git
 .github
 .claude
+.wrangler
+.gitignore
+.env
+.env.*
+!.env.example
+scripts
+supabase
+README.md
+styleguide.html

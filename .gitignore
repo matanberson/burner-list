@@ -1,0 +1,16 @@
+.env
+.env.*
+!.env.example
+node_modules/
+.wrangler/
+.claude/
+tmp/
+output/
+*.zip
+.DS_Store
+**/.DS_Store
+ios/Config.xcconfig
+ios/**/xcuserdata/
+ios/**/UserInterfaceState.xcuserstate
+DerivedData/
+*.xcresult

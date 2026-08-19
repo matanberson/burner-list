@@ -1,0 +1,8 @@
+PRODUCT_BUNDLE_IDENTIFIER = com.example.burnerlist
+PRODUCT_NAME = BurnerList
+MARKETING_VERSION = 1.0
+CURRENT_PROJECT_VERSION = 1
+
+// Public client configuration only. Never place a service-role key here.
+SUPABASE_URL = https://YOUR_PROJECT.supabase.co
+SUPABASE_ANON_KEY = YOUR_PUBLIC_ANON_KEY

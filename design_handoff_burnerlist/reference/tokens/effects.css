@@ -1,0 +1,12 @@
+:root{
+--shadow-soft:0 16px 42px rgba(58,53,48,0.08);
+--shadow-popover:0 8px 28px rgba(58,53,48,0.12);
+--shadow-sidebar:2px 0 20px rgba(0,0,0,0.08);
+--shadow-modal:0 20px 70px rgba(0,0,0,0.22);
+--shadow-menu:0 4px 16px rgba(0,0,0,0.1);
+--ease-standard:ease; /* @kind other */
+--duration-fast:0.15s; /* @kind other */
+--duration-base:0.2s; /* @kind other */
+--duration-slow:0.25s; /* @kind other */
+--duration-color:0.4s; /* @kind other */
+}
