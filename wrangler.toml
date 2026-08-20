@@ -4,3 +4,4 @@ compatibility_flags = ["nodejs_compat"]
 
 [assets]
 directory = "."
+# noop: retrigger Workers Build with new token "burner list v2 token"

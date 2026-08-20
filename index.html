@@ -8,904 +8,37 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Burner List">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest">
-  <link rel="apple-touch-icon" href="/assets/icons/icon-180.png">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍳</text></svg>">
+  <link rel="manifest" href="/manifest.webmanifest?v=39">
+  <link rel="apple-touch-icon" href="/assets/icons/Icon.png?v=39">
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon.png?v=39">
+  <link rel="stylesheet" href="/assets/generated/design-tokens.css?v=40">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --bg: #e8e0d4;
-      --paper: #fffdf7;
-      --border: #e8e2d9;
-      --border-strong: #d6d0c6;
-      --text-dark: #3a3530;
-      --text-mid: #6b6258;
-      --text-soft: #c0afa7;
-      --text-faint: #b5ad9f;
-      --text-faintest: #c5b9b0;
-      --hover-tint: rgba(180,165,140,0.08);
-      --hover-tint-strong: rgba(180,165,140,0.18);
-    }
-
-    body[data-theme="sage"] {
-      --bg: #dde4d8;
-      --paper: #fbfcf8;
-      --border: #e2e8dd;
-      --border-strong: #c9d3c2;
-      --text-dark: #333a2f;
-      --text-mid: #5d6b54;
-      --text-soft: #8a9580;
-      --text-faint: #a8b29e;
-      --text-faintest: #bcc6b3;
-      --hover-tint: rgba(140,165,120,0.08);
-      --hover-tint-strong: rgba(140,165,120,0.18);
-    }
-
-    body[data-theme="slate"] {
-      --bg: #dde3e6;
-      --paper: #f8fafb;
-      --border: #e1e7ea;
-      --border-strong: #c3ced3;
-      --text-dark: #2f3a3e;
-      --text-mid: #54676d;
-      --text-soft: #80949a;
-      --text-faint: #9eb0b5;
-      --text-faintest: #b3c2c6;
-      --hover-tint: rgba(120,150,160,0.08);
-      --hover-tint-strong: rgba(120,150,160,0.18);
-    }
-
-    body[data-theme="clay"] {
-      --bg: #ead9d0;
-      --paper: #fdf8f5;
-      --border: #ece0d8;
-      --border-strong: #d9c4b6;
-      --text-dark: #3e2f28;
-      --text-mid: #6e564a;
-      --text-soft: #9c8276;
-      --text-faint: #b59c8e;
-      --text-faintest: #c8b1a4;
-      --hover-tint: rgba(180,140,120,0.08);
-      --hover-tint-strong: rgba(180,140,120,0.18);
-    }
-
-    body[data-theme="lavender"] {
-      --bg: #e2dde8;
-      --paper: #faf8fc;
-      --border: #e6e1ec;
-      --border-strong: #cfc5d8;
-      --text-dark: #352f3c;
-      --text-mid: #61566d;
-      --text-soft: #8c8198;
-      --text-faint: #a89db3;
-      --text-faintest: #bcb0c6;
-      --hover-tint: rgba(150,130,170,0.08);
-      --hover-tint-strong: rgba(150,130,170,0.18);
-    }
-
-    body {
-      font-family: Inter, sans-serif;
-      background: var(--paper);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: calc(70px + env(safe-area-inset-top, 0px)) max(20px, env(safe-area-inset-right, 0px)) calc(40px + env(safe-area-inset-bottom, 0px)) max(20px, env(safe-area-inset-left, 0px));
-      transition: background 0.4s;
-    }
-
-    body.reschedule-mode { background: #e8d4d4; }
-
-    /* Top bar: hamburger + title + date in one line */
-    .top-bar {
-      position: fixed;
-      top: env(safe-area-inset-top, 0px);
-      left: 0;
-      right: 0;
-      z-index: 120;
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      padding: 16px 40px;
-      background: var(--paper);
-      transition: background 0.4s;
-    }
-
-    @supports (padding-top: env(safe-area-inset-top)) {
-      .top-bar::before {
-        content: "";
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: env(safe-area-inset-top);
-        background: var(--paper);
-      }
-    }
-
-    .hamburger {
-      flex-shrink: 0;
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 6px;
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
-    .hamburger span {
-      display: block;
-      width: 22px;
-      height: 2px;
-      background: var(--text-mid);
-      border-radius: 2px;
-      transition: opacity 0.2s;
-    }
-    .hamburger:hover span { background: var(--text-dark); }
-
-    .top-bar h1 {
-      font-family: Caveat, cursive;
-      font-size: 26px;
-      font-weight: 700;
-      color: var(--text-dark);
-      white-space: nowrap;
-    }
-    .top-bar .date {
-      font-size: 13px;
-      color: var(--text-soft);
-      white-space: nowrap;
-      margin-left: auto;
-    }
-
-    /* Quote section at the bottom of the page */
-    .quote-section {
-      width: 900px;
-      max-width: 100%;
-      margin-top: 24px;
-      text-align: center;
-    }
-    .quote-box {
-      display: none;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      background: var(--paper);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 20px 32px;
-    }
-    .quote-box.has-quote { display: flex; }
-    .quote-banner-text {
-      font-family: Inter, sans-serif;
-      font-size: 18px;
-      font-weight: 400;
-      font-style: italic;
-      color: var(--text-mid);
-      line-height: 1.3;
-      text-align: left;
-    }
-    .quote-actions {
-      display: flex;
-      gap: 10px;
-      flex-shrink: 0;
-    }
-    .icon-btn {
-      background: none;
-      border: none;
-      color: var(--text-faint);
-      font-size: 15px;
-      cursor: pointer;
-      padding: 4px;
-      line-height: 1;
-    }
-    .icon-btn:hover { color: var(--text-mid); }
-
-    .add-quote-btn {
-      background: none;
-      border: none;
-      color: var(--text-faint);
-      font-size: 13px;
-      font-family: Inter, sans-serif;
-      cursor: pointer;
-      padding: 4px 0;
-    }
-    .add-quote-btn:hover { color: var(--text-mid); }
-
-    /* Sidebar overlay */
-    .sidebar-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 100;
-      background: rgba(0,0,0,0.15);
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.25s;
-    }
-    .sidebar-overlay.visible { opacity: 1; pointer-events: all; }
-
-    /* Sidebar */
-    .sidebar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      bottom: 0;
-      width: 300px;
-      z-index: 150;
-      background: var(--paper);
-      display: flex;
-      flex-direction: column;
-      transform: translateX(-100%);
-      transition: transform 0.25s ease;
-      box-shadow: 2px 0 20px rgba(0,0,0,0.08);
-    }
-    .sidebar.open { transform: translateX(0); }
-
-    .sidebar-header {
-      padding: 24px 20px 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid var(--border);
-    }
-    .sidebar-header h2 {
-      font-family: Inter, sans-serif;
-      font-size: 16px;
-      font-weight: 600;
-      color: var(--text-dark);
-    }
-    .new-list-btn {
-      background: var(--text-mid);
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      padding: 8px 14px;
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-      font-family: Inter, sans-serif;
-    }
-    .new-list-btn:hover { opacity: 0.88; }
-
-    .sidebar-lists {
-      flex: 1;
-      overflow-y: auto;
-    }
-    .sidebar-list-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 20px;
-      cursor: pointer;
-      border-bottom: 1px solid var(--border);
-    }
-    .sidebar-list-item:hover { background: var(--hover-tint); }
-    .sidebar-list-item.active { background: var(--hover-tint-strong); }
-
-    .list-date { font-size: 14px; font-weight: 500; color: var(--text-dark); }
-    .list-weekday { font-size: 11px; color: var(--text-soft); }
-    .list-preview { font-size: 11px; color: var(--text-faint); margin-top: 2px; }
-
-    .delete-list-btn {
-      background: none;
-      border: none;
-      color: var(--text-faintest);
-      font-size: 18px;
-      cursor: pointer;
-      padding: 0 4px;
-      line-height: 1;
-      opacity: 0;
-      transition: opacity 0.15s;
-    }
-    .sidebar-list-item:hover .delete-list-btn { opacity: 1; }
-    .delete-list-btn:hover { color: #b04040; }
-
-    .sidebar-section {
-      padding: 16px 20px;
-      border-top: 1px solid var(--border);
-    }
-    .sidebar-section-label {
-      font-size: 11px;
-      font-weight: 500;
-      letter-spacing: 0.6px;
-      text-transform: uppercase;
-      color: var(--text-faint);
-      margin-bottom: 10px;
-    }
-    .theme-swatches {
-      display: flex;
-      gap: 10px;
-    }
-    .theme-swatch {
-      width: 26px;
-      height: 26px;
-      border-radius: 50%;
-      cursor: pointer;
-      border: 2px solid transparent;
-      transition: border-color 0.15s, transform 0.15s;
-    }
-    .theme-swatch:hover { transform: scale(1.08); }
-    .theme-swatch.active { border-color: var(--text-mid); }
-
-    .sidebar-footer {
-      padding: 10px 20px;
-      border-top: 1px solid var(--border);
-    }
-    .sidebar-btn {
-      background: none;
-      border: 1px solid var(--border-strong);
-      border-radius: 5px;
-      padding: 8px 10px;
-      font-size: 12px;
-      color: var(--text-mid);
-      cursor: pointer;
-      font-family: Inter, sans-serif;
-    }
-    .sidebar-btn:hover { background: var(--hover-tint); }
-
-    /* Unscheduled tasks */
-    .unscheduled-section {
-      width: 900px;
-      max-width: 100%;
-      background: var(--paper);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 20px 40px 12px;
-      margin-bottom: 16px;
-      display: none;
-      transition: background 0.15s;
-    }
-    .unscheduled-section.has-tasks { display: block; }
-    .unscheduled-section.drag-over-zone { background: var(--hover-tint); }
-    .unscheduled-label {
-      font-family: Inter, sans-serif;
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--text-mid);
-      text-transform: uppercase;
-      letter-spacing: 0.6px;
-    }
-    .unscheduled-hint {
-      font-size: 12px;
-      color: var(--text-soft);
-      font-style: italic;
-      margin: 1px 0 12px;
-    }
-
-    /* Paper */
-    .paper {
-      background: var(--paper);
-      width: 900px;
-      max-width: 100%;
-      border-radius: 4px;
-      border: 1px solid var(--border);
-      overflow: hidden;
-      margin-top: 100px;
-    }
-
-    /* Columns */
-    .columns {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      min-height: 480px;
-    }
-
-    .column {
-      display: flex;
-      flex-direction: column;
-    }
-    .column:first-child { border-right: 1px solid var(--border); }
-
-    /* Front burner takes full left column height */
-    .column:first-child .zone { flex: 1; }
-
-    .zone {
-      padding: 40px;
-      border-top: 1px solid var(--border);
-      transition: background 0.15s;
-    }
-    .zone.drag-over-zone { background: var(--hover-tint); }
-    .column:last-child .zone:first-child { flex: 1; }
-    .column:last-child .zone:last-child { flex: 1; }
-    .column:first-child .zone:first-child { border-top: none; }
-    .column:last-child .zone:first-child { border-top: none; }
-
-    .zone-header { margin-bottom: 14px; }
-
-    .zone-label {
-      font-family: Inter, sans-serif;
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--text-mid);
-      text-transform: uppercase;
-      letter-spacing: 0.6px;
-    }
-    .project-name {
-      display: block;
-      width: 100%;
-      background: none;
-      border: none;
-      border-bottom: 1.5px solid var(--border-strong);
-      font-family: Inter, sans-serif;
-      font-size: 15px;
-      font-weight: 600;
-      color: var(--text-dark);
-      padding: 4px 0;
-      margin-bottom: 12px;
-      outline: none;
-    }
-    .project-name::placeholder { color: var(--text-faint); font-weight: 400; }
-    .project-name:focus { border-bottom-color: var(--text-soft); }
-
-    /* Task list */
-    .task-list {
-      list-style: none;
-      margin-bottom: 4px;
-      min-height: 12px;
-    }
-
-    .task-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 7px 8px 7px 4px;
-      border-radius: 5px;
-      cursor: default;
-      position: relative;
-      border-bottom: 1px solid var(--border);
-    }
-    .task-item:last-child { border-bottom: none; }
-    .task-item:hover { background: var(--hover-tint); }
-    .task-item.drag-over { background: var(--hover-tint-strong); }
-
-    .postpone-btn {
-      background: none;
-      border: none;
-      color: var(--text-faintest);
-      font-size: 13px;
-      cursor: pointer;
-      padding: 0 2px;
-      line-height: 1;
-      opacity: 0;
-      transition: opacity 0.15s;
-      flex-shrink: 0;
-    }
-    .task-item:hover .postpone-btn { opacity: 1; }
-    .postpone-btn:hover { color: var(--text-mid); }
-
-    .postpone-menu {
-      position: absolute;
-      right: 28px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: var(--paper);
-      border: 1px solid var(--border-strong);
-      border-radius: 6px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-      z-index: 50;
-      min-width: 150px;
-      overflow: hidden;
-      display: none;
-    }
-    .postpone-menu.open { display: block; }
-    .postpone-menu-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 9px 14px;
-      font-size: 13px;
-      color: var(--text-dark);
-      cursor: pointer;
-      white-space: nowrap;
-    }
-    .postpone-menu-item:hover { background: var(--hover-tint); }
-    .postpone-menu-item span { color: var(--text-soft); font-size: 12px; }
-
-    .drag-handle {
-      width: 14px;
-      text-align: center;
-      color: var(--text-faintest);
-      font-size: 14px;
-      cursor: grab;
-      line-height: 1;
-      opacity: 0;
-      transition: opacity 0.15s;
-      user-select: none;
-      flex-shrink: 0;
-    }
-    .task-item:hover .drag-handle { opacity: 1; }
-    .drag-handle:active { cursor: grabbing; }
-
-    .task-item input[type="checkbox"] {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 16px;
-      height: 16px;
-      flex-shrink: 0;
-      cursor: pointer;
-      border: 1.5px solid var(--text-faint);
-      border-radius: 50%;
-      background: transparent;
-      position: relative;
-    }
-    .task-item input[type="checkbox"]:checked {
-      background: var(--text-mid);
-      border-color: var(--text-mid);
-    }
-    .task-item input[type="checkbox"]:checked::after {
-      content: '';
-      position: absolute;
-      left: 4px;
-      top: 1px;
-      width: 5px;
-      height: 8px;
-      border: 2px solid #fff;
-      border-top: none;
-      border-left: none;
-      transform: rotate(45deg);
-    }
-
-    .task-text {
-      flex: 1;
-      background: none;
-      border: none;
-      font-family: Inter, sans-serif;
-      font-size: 14px;
-      color: var(--text-dark);
-      outline: none;
-      min-width: 0;
-    }
-    .task-text::placeholder { color: var(--text-faint); }
-    .task-text.completed {
-      text-decoration: line-through;
-      color: var(--text-faint);
-    }
-
-    .delete-btn {
-      background: none;
-      border: none;
-      color: var(--text-faintest);
-      font-size: 16px;
-      cursor: pointer;
-      padding: 0 2px;
-      line-height: 1;
-      opacity: 0;
-      transition: opacity 0.15s;
-      flex-shrink: 0;
-    }
-    .task-item:hover .delete-btn { opacity: 1; }
-    .delete-btn:hover { color: #b04040; }
-
-    /* Add task button */
-    .add-task-btn {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: none;
-      border: none;
-      color: var(--text-faint);
-      font-size: 13px;
-      font-family: Inter, sans-serif;
-      cursor: pointer;
-      padding: 6px 4px 6px 24px;
-      margin-top: 2px;
-    }
-    .add-task-btn:hover { color: var(--text-mid); }
-    .plus {
-      width: 16px;
-      height: 16px;
-      flex-shrink: 0;
-      border: 1.5px solid currentColor;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      line-height: 1;
-    }
-
-    /* Reschedule */
-    .reschedule-wrap {
-      width: 900px;
-      max-width: 100%;
-      display: flex;
-      justify-content: flex-end;
-      margin-top: 16px;
-    }
-    .reschedule-btn {
-      display: none;
-      background: none;
-      border: 1px solid var(--border-strong);
-      border-radius: 5px;
-      color: var(--text-soft);
-      font-size: 13px;
-      font-family: Inter, sans-serif;
-      cursor: pointer;
-      padding: 6px 12px;
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-    .reschedule-btn.visible { display: block; }
-    .reschedule-btn:hover { color: var(--text-mid); border-color: var(--text-faint); background: var(--hover-tint); }
-
-    /* Quote modal */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 250;
-      background: rgba(0,0,0,0.25);
-      display: none;
-      align-items: center;
-      justify-content: center;
-    }
-    .modal-overlay.visible { display: flex; }
-    .modal-box {
-      background: var(--paper);
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      padding: 24px;
-      width: 420px;
-      max-width: 90vw;
-    }
-    .modal-box h3 {
-      font-family: Inter, sans-serif;
-      font-size: 16px;
-      font-weight: 600;
-      color: var(--text-dark);
-      margin-bottom: 12px;
-    }
-    .modal-box textarea {
-      width: 100%;
-      min-height: 80px;
-      font-family: Inter, sans-serif;
-      font-size: 14px;
-      color: var(--text-mid);
-      border: 1px solid var(--border-strong);
-      border-radius: 6px;
-      padding: 10px;
-      outline: none;
-      resize: vertical;
-    }
-    .modal-body {
-      font-size: 14px;
-      color: var(--text-mid);
-      line-height: 1.45;
-      margin-bottom: 14px;
-    }
-    .modal-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 8px;
-      margin-top: 14px;
-      flex-wrap: wrap;
-    }
-    .modal-actions button {
-      border: none;
-      border-radius: 5px;
-      padding: 8px 14px;
-      font-size: 13px;
-      font-family: Inter, sans-serif;
-      cursor: pointer;
-    }
-    .modal-cancel-btn { background: none; color: var(--text-mid); border: 1px solid var(--border-strong) !important; }
-    .modal-cancel-btn:hover { background: var(--hover-tint); }
-    .modal-save-btn { background: var(--text-mid); color: #fff; }
-    .modal-save-btn:hover { opacity: 0.88; }
-    .modal-secondary-btn { background: var(--hover-tint); color: var(--text-mid); border: 1px solid var(--border) !important; }
-    .modal-secondary-btn:hover { background: var(--hover-tint-strong); }
-
-    /* Toast */
-    .toast {
-      position: fixed;
-      bottom: 28px;
-      left: 50%;
-      transform: translateX(-50%) translateY(20px);
-      background: var(--text-dark);
-      color: #fff;
-      font-size: 13px;
-      padding: 10px 20px;
-      border-radius: 6px;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.2s, transform 0.2s;
-      z-index: 300;
-      white-space: nowrap;
-    }
-    .toast.show {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-    }
-
-    /* Lucide icon sizing */
-    .lucide { display: inline-block; vertical-align: middle; stroke-width: 1.75; }
-    .task-item .lucide { width: 14px; height: 14px; }
-    .drag-handle .lucide { width: 13px; height: 13px; color: var(--text-faintest); }
-    .icon-btn .lucide { width: 15px; height: 15px; }
-    .list-edit-date-btn { background: none; border: none; cursor: pointer; color: var(--text-faintest); padding: 0 2px; opacity: 0; transition: opacity 0.15s; line-height: 1; }
-    .list-edit-date-btn .lucide { width: 11px; height: 11px; }
-    .sidebar-list-item:hover .list-edit-date-btn { opacity: 1; }
-    .list-edit-date-btn:hover { color: var(--text-mid); }
-    .delete-list-btn .lucide { width: 14px; height: 14px; }
-
-    /* Confetti */
-    .confetti-piece {
-      position: fixed;
-      top: -10px;
-      z-index: 400;
-      pointer-events: none;
-      border-radius: 2px;
-    }
-
-    /* Responsive */
-    @media (max-width: 640px) {
-      body { padding: calc(64px + env(safe-area-inset-top, 0px)) max(8px, env(safe-area-inset-right, 0px)) calc(30px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)); }
-      .top-bar { padding: 14px 16px; gap: 10px; }
-      .top-bar h1 { font-size: 21px; }
-      .top-bar .date { font-size: 11px; }
-      .quote-banner-text { font-size: 22px; }
-      .quote-box { padding: 16px 18px; flex-direction: column; align-items: flex-start; }
-      .columns { grid-template-columns: 1fr; }
-      .column:first-child { border-right: none; border-bottom: 1px solid var(--border); }
-      .column:first-child .zone:first-child { border-top: none; }
-      .column:last-child .zone:first-child { border-top: none; }
-      .zone { padding: 32px 24px; }
-    }
-    @media (max-width: 400px) {
-      .top-bar { flex-wrap: wrap; padding-bottom: 8px; }
-      .top-bar .date { width: 100%; text-align: center; margin-left: 0; order: 3; }
-    }
-
-    /* ── Auth screen ─────────────────────────────────────────────── */
-    .auth-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 500;
-      background: #fffdf7;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-    .auth-overlay.hidden { display: none; }
-    .auth-box {
-      width: 360px;
-      max-width: 100%;
-    }
-    .auth-logo {
-      font-family: Caveat, cursive;
-      font-size: 32px;
-      font-weight: 700;
-      color: #3a3530;
-      margin-bottom: 4px;
-    }
-    .auth-tagline {
-      font-size: 13px;
-      color: #c0afa7;
-      margin-bottom: 32px;
-    }
-    .auth-tabs {
-      display: flex;
-      gap: 0;
-      border-bottom: 1px solid #e8e2d9;
-      margin-bottom: 20px;
-    }
-    .auth-tab {
-      background: none;
-      border: none;
-      padding: 8px 0;
-      margin-right: 20px;
-      font-size: 14px;
-      font-family: Inter, sans-serif;
-      color: #b5ad9f;
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      margin-bottom: -1px;
-    }
-    .auth-tab.active { color: #3a3530; border-bottom-color: #6b6258; }
-    .auth-field {
-      width: 100%;
-      border: 1px solid #e8e2d9;
-      border-radius: 6px;
-      padding: 10px 12px;
-      font-size: 14px;
-      font-family: Inter, sans-serif;
-      color: #3a3530;
-      outline: none;
-      margin-bottom: 10px;
-      background: #fff;
-    }
-    .auth-field:focus { border-color: #b5ad9f; }
-    .auth-submit-btn {
-      width: 100%;
-      background: #6b6258;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      padding: 11px;
-      font-size: 14px;
-      font-weight: 500;
-      font-family: Inter, sans-serif;
-      cursor: pointer;
-      margin-top: 4px;
-    }
-    .auth-submit-btn:hover { background: #5a5148; }
-    .auth-divider {
-      text-align: center;
-      font-size: 12px;
-      color: #b5ad9f;
-      margin: 16px 0;
-      position: relative;
-    }
-    .auth-divider::before, .auth-divider::after {
-      content: '';
-      position: absolute;
-      top: 50%;
-      width: 44%;
-      height: 1px;
-      background: #e8e2d9;
-    }
-    .auth-divider::before { left: 0; }
-    .auth-divider::after { right: 0; }
-    .auth-google-btn {
-      width: 100%;
-      background: none;
-      border: 1px solid #e8e2d9;
-      border-radius: 6px;
-      padding: 10px;
-      font-size: 14px;
-      font-family: Inter, sans-serif;
-      color: #3a3530;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-    .auth-google-btn:hover { background: #f9f7f2; }
-    .auth-error {
-      color: #b04040;
-      font-size: 13px;
-      margin-top: 10px;
-      min-height: 18px;
-    }
-    .auth-sync-badge {
-      display: none;
-      align-items: center;
-      gap: 4px;
-      font-size: 11px;
-      color: #b5ad9f;
-    }
-    .auth-sync-badge.syncing { display: flex; }
-    .sync-dot {
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: #b5ad9f;
-      animation: pulse 1.2s infinite;
-    }
-    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
-  </style>
+  <link rel="stylesheet" href="/assets/design-system/components.css?v=40">
+  <link rel="stylesheet" href="/assets/app.css?v=41">
 </head>
 <body>
 
   <!-- Auth screen -->
   <div class="auth-overlay" id="authOverlay">
     <div class="auth-box">
-      <div class="auth-logo">🍳 Burner List 🔥</div>
-      <div class="auth-tagline">Your daily task planner</div>
+      <div class="auth-logo" role="img" aria-label="Burner List">
+        <img class="auth-brand-wordmark auth-brand-wordmark--light" src="/assets/brand/burner-list-wordmark.svg?v=38" alt="">
+        <img class="auth-brand-wordmark auth-brand-wordmark--dark" src="/assets/brand/burner-list-wordmark-dark.svg?v=38" alt="">
+      </div>
+      <div class="auth-tagline">Focus on your day's two most important things</div>
       <div class="auth-tabs">
         <button class="auth-tab active" data-tab="login" id="loginTab">Sign in</button>
         <button class="auth-tab" data-tab="signup" id="signupTab">Sign up</button>
       </div>
-      <input class="auth-field" type="email" id="authEmail" placeholder="Email" autocomplete="email">
-      <input class="auth-field" type="password" id="authPassword" placeholder="Password" autocomplete="current-password">
-      <button class="auth-submit-btn" id="authSubmitBtn">Sign in</button>
+      <input class="auth-field ds-field" type="email" id="authEmail" placeholder="Email" autocomplete="email">
+      <input class="auth-field ds-field" type="password" id="authPassword" placeholder="Password" autocomplete="current-password">
+      <button class="auth-submit-btn ds-button ds-button--primary" id="authSubmitBtn">Sign in</button>
       <div class="auth-divider">or</div>
-      <button class="auth-google-btn" id="googleAuthBtn">
+      <button class="auth-google-btn ds-button ds-button--secondary" id="googleAuthBtn">
         <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
         Continue with Google
       </button>
@@ -913,13 +46,23 @@
     </div>
   </div>
 
-  <!-- Top bar: hamburger + title + date -->
+  <!-- Compact top bar: navigation control + centered date -->
   <div class="top-bar">
-    <button class="hamburger" id="hamburgerBtn" aria-label="Open menu">
-      <span></span><span></span><span></span>
+    <button class="ds-button ds-button--icon ds-button--compact-icon hamburger" id="hamburgerBtn" aria-label="Open menu" aria-expanded="false" aria-controls="sidebar">
+      <i data-lucide="panel-left"></i>
     </button>
-    <h1>🍳 Burner List 🔥</h1>
-    <div class="date" id="dateDisplay"></div>
+    <div class="date-lockup">
+      <div class="date ds-date-lockup" id="dateDisplay" aria-live="polite">
+        <div class="date-primary ds-date-heading" id="datePrimary" role="heading" aria-level="1"></div>
+        <div class="date-subtitle ds-date-subtitle" id="dateSubtitle"></div>
+      </div>
+    </div>
+    <button class="reschedule-btn ds-button ds-button--primary" id="rescheduleBtn" type="button">Reschedule</button>
+    <select class="view-mode-select" id="viewModeSelect" aria-label="Change task view" title="Change task view">
+      <option value="burner">Burner List</option>
+      <option value="kanban">Kanban</option>
+      <option value="list">List</option>
+    </select>
   </div>
 
   <!-- Sidebar overlay -->
@@ -928,36 +71,73 @@
   <!-- Sidebar -->
   <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
-      <h2>My Lists</h2>
-      <button class="new-list-btn" id="newListBtn">+ New List</button>
+      <div class="sidebar-brand">
+        <img class="sidebar-brand-wordmark sidebar-brand-wordmark--light" src="/assets/brand/burner-list-wordmark.svg?v=38" alt="Burner List">
+        <img class="sidebar-brand-wordmark sidebar-brand-wordmark--dark" src="/assets/brand/burner-list-wordmark-dark.svg?v=38" alt="Burner List">
+      </div>
+      <button class="ds-button ds-button--icon ds-button--compact-icon sidebar-close-btn" id="sidebarCloseBtn" aria-label="Close menu">
+        <i data-lucide="panel-left"></i>
+      </button>
     </div>
-    <div class="sidebar-lists" id="sidebarLists"></div>
-    <div class="sidebar-section">
+    <button class="sidebar-primary-action" id="sidebarAddTaskBtn" hidden><i data-lucide="plus"></i><span>Add task</span></button>
+    <div class="sidebar-smart-views" id="sidebarSmartViews">
+      <button class="sidebar-smart-item" data-nav-view="today"><i data-lucide="calendar-days"></i><span>Today's List</span><span class="smart-count" id="todayCount">0</span></button>
+      <button class="sidebar-smart-item" data-smart-view="all"><i data-lucide="list-checks"></i><span>All Tasks</span><span class="smart-count" id="allTasksCount">0</span></button>
+      <button class="sidebar-smart-item" data-smart-view="upcoming"><i data-lucide="calendar-range"></i><span>Upcoming</span><i data-lucide="chevron-right" style="margin-left:auto"></i></button>
+      <button class="sidebar-smart-item" data-smart-view="previous"><i data-lucide="history"></i><span>Previous</span><i data-lucide="chevron-right" style="margin-left:auto"></i></button>
+    </div>
+    <div class="sidebar-lists" id="sidebarLists" hidden></div>
+    <div class="sidebar-section" hidden>
+      <div class="sidebar-section-label">Advanced</div>
+      <label class="ds-setting-row" for="quotePreference">
+        <span class="ds-setting-copy">
+          <span class="ds-setting-title">Quote of the day</span>
+          <span class="ds-setting-description">Show an optional quote below your Burner List.</span>
+        </span>
+        <input class="ds-checkbox" type="checkbox" id="quotePreference">
+      </label>
+      <label class="ds-setting-row" for="alternateViewsPreference">
+        <span class="ds-setting-copy">
+          <span class="ds-setting-title">Alternate views</span>
+          <span class="ds-setting-description">Enable the Kanban and general list views.</span>
+        </span>
+        <input class="ds-checkbox" type="checkbox" id="alternateViewsPreference">
+      </label>
+    </div>
+    <div class="sidebar-section method-credit">
+      <div class="sidebar-section-label">Credit</div>
+      <div class="method-credit-copy">
+        The Burner List app was inspired by the method created by Jake Knapp.
+        <a href="https://www.ideo.com/journal/sprint-author-jake-knapp-built-you-a-new-to-do-list" target="_blank" rel="noopener noreferrer">Read the original method</a>
+      </div>
+    </div>
+    <div class="sidebar-section theme-section">
       <div class="sidebar-section-label">Theme</div>
       <div class="theme-swatches" id="themeSwatches">
         <div class="theme-swatch" data-theme="default" style="background:#e8e0d4" title="Sand"></div>
-        <div class="theme-swatch" data-theme="sage" style="background:#dde4d8" title="Sage"></div>
+        <div class="theme-swatch" data-theme="dark" style="background:#1c1a17" title="Dark"></div>
         <div class="theme-swatch" data-theme="slate" style="background:#dde3e6" title="Slate"></div>
         <div class="theme-swatch" data-theme="clay" style="background:#ead9d0" title="Clay"></div>
         <div class="theme-swatch" data-theme="lavender" style="background:#e2dde8" title="Lavender"></div>
       </div>
     </div>
-    <div class="sidebar-section">
+    <div class="sidebar-section account-section">
       <div class="sidebar-section-label">Account</div>
-      <div style="display:flex; gap:8px; margin-bottom:8px;">
-        <button class="sidebar-btn" id="exportBtn" style="flex:1;">Export</button>
-        <button class="sidebar-btn" id="importBtn" style="flex:1;">Import</button>
+      <div class="sidebar-account-row">
+        <div class="sidebar-user-email" id="sidebarUserEmail"></div>
+        <div class="auth-sync-badge" id="syncBadge"><div class="sync-dot"></div> Saving…</div>
       </div>
       <button class="sidebar-btn" id="logoutBtn" style="width:100%;">Sign out</button>
     </div>
-    <div class="sidebar-footer">
-      <div style="display:flex; align-items:center; justify-content:space-between; width:100%;">
-        <div style="font-size:12px; color:var(--text-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;" id="sidebarUserEmail"></div>
-        <div class="auth-sync-badge" id="syncBadge"><div class="sync-dot"></div> Saving…</div>
-      </div>
-    </div>
-    <input type="file" id="importFile" accept=".json" style="display:none">
   </div>
+
+  <main class="smart-view" id="smartView" aria-live="polite">
+    <div class="smart-header">
+      <div class="smart-header-copy" aria-hidden="true"><h2 class="smart-title" id="smartViewTitle">All Tasks</h2><div class="smart-subtitle" id="smartViewSubtitle"></div></div>
+      <button class="quick-add-btn" id="smartQuickAddBtn">+ Add task</button>
+    </div>
+    <div id="smartViewContent"></div>
+  </main>
 
   <!-- Unscheduled tasks (from reschedule) -->
   <div class="unscheduled-section" id="unscheduledSection">
@@ -971,40 +151,63 @@
     <div class="columns">
       <!-- Left: Front Burner -->
       <div class="column">
-        <div class="zone" id="front-burner">
-          <div class="zone-header">
-            <div class="zone-label">Front Burner</div>
+        <div class="zone zone--project" id="front-burner">
+          <div class="zone-content">
+            <div class="zone-header">
+              <div class="zone-label ds-zone-label">Front Burner</div>
+            </div>
+            <textarea class="project-name ds-project-name" data-zone="front-burner" placeholder="Your #1 priority" rows="1" autocomplete="off"></textarea>
+            <ul class="task-list" data-zone="front-burner"></ul>
+            <button class="add-task-btn" data-zone="front-burner"><span class="plus">+</span> Add task</button>
           </div>
-          <input class="project-name" data-zone="front-burner" placeholder="Your #1 priority" autocomplete="off">
-          <ul class="task-list" data-zone="front-burner"></ul>
-          <button class="add-task-btn" data-zone="front-burner"><span class="plus">+</span> Add task</button>
         </div>
       </div>
 
       <!-- Right: Back Burner + Kitchen Sink -->
       <div class="column">
-        <div class="zone" id="back-burner">
-          <div class="zone-header">
-            <div class="zone-label">Back Burner</div>
+        <div class="zone zone--project" id="back-burner">
+          <div class="zone-content">
+            <div class="zone-header">
+              <div class="zone-label ds-zone-label">Back Burner</div>
+            </div>
+            <textarea class="project-name ds-project-name" data-zone="back-burner" placeholder="Your #2 project" rows="1" autocomplete="off"></textarea>
+            <ul class="task-list" data-zone="back-burner"></ul>
+            <button class="add-task-btn" data-zone="back-burner"><span class="plus">+</span> Add task</button>
           </div>
-          <input class="project-name" data-zone="back-burner" placeholder="Your #2 project" autocomplete="off">
-          <ul class="task-list" data-zone="back-burner"></ul>
-          <button class="add-task-btn" data-zone="back-burner"><span class="plus">+</span> Add task</button>
         </div>
-        <div class="zone" id="kitchen-sink">
-          <div class="zone-header">
-            <div class="zone-label">Kitchen Sink</div>
+        <div class="zone zone--kitchen-sink" id="kitchen-sink">
+          <div class="zone-content">
+            <div class="zone-header">
+              <div class="zone-label ds-zone-label">Kitchen Sink</div>
+            </div>
+            <ul class="task-list" data-zone="kitchen-sink"></ul>
+            <button class="add-task-btn" data-zone="kitchen-sink"><span class="plus">+</span> Add task</button>
           </div>
-          <ul class="task-list" data-zone="kitchen-sink"></ul>
-          <button class="add-task-btn" data-zone="kitchen-sink"><span class="plus">+</span> Add task</button>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="reschedule-wrap">
-    <button class="reschedule-btn" id="rescheduleBtn">Reschedule Tasks →</button>
+  <!-- Kanban board (alternate view of the same tasks) -->
+  <div class="kanban-board" id="kanbanBoard">
+    <div class="kanban-column" data-column="backlog">
+      <div class="zone-header"><div class="zone-label">Backlog</div></div>
+      <ul class="kanban-list" data-column="backlog"></ul>
+      <button class="kanban-add-btn" data-column="backlog"><span class="plus">+</span> Add task</button>
+    </div>
+    <div class="kanban-column" data-column="doing">
+      <div class="zone-header"><div class="zone-label">Doing</div></div>
+      <ul class="kanban-list" data-column="doing"></ul>
+      <button class="kanban-add-btn" data-column="doing"><span class="plus">+</span> Add task</button>
+    </div>
+    <div class="kanban-column" data-column="done">
+      <div class="zone-header"><div class="zone-label">Done</div></div>
+      <ul class="kanban-list" data-column="done"></ul>
+      <button class="kanban-add-btn" data-column="done"><span class="plus">+</span> Add task</button>
+    </div>
   </div>
+
+  <main class="straight-list" id="straightList" aria-live="polite"></main>
 
   <!-- Quote section -->
   <div class="quote-section">
@@ -1043,7 +246,45 @@
     </div>
   </div>
 
+  <!-- Bulk reschedule modal -->
+  <div class="modal-overlay" id="rescheduleModalOverlay" role="dialog" aria-modal="true" aria-labelledby="rescheduleModalTitle" aria-hidden="true">
+    <form class="modal-box" id="rescheduleForm">
+      <h3 id="rescheduleModalTitle">Reschedule unfinished tasks</h3>
+      <div class="modal-body">Choose the day these tasks should move to. They’ll be added to that day’s Kitchen Sink.</div>
+      <label class="reschedule-date-label" for="rescheduleDate">New date</label>
+      <input class="ds-field" type="date" id="rescheduleDate" required>
+      <div class="modal-actions">
+        <button class="ds-button ds-button--secondary modal-cancel-btn" type="button" id="rescheduleCancel">Cancel</button>
+        <button class="ds-button ds-button--primary" type="submit">Reschedule</button>
+      </div>
+    </form>
+  </div>
+
   <div class="toast" id="toast"></div>
+
+  <div class="quick-add-overlay" id="quickAddOverlay">
+    <form class="quick-add-box" id="quickAddForm">
+      <input class="quick-add-input" id="quickAddInput" placeholder="What do you need to do?" autocomplete="off">
+      <div class="quick-add-row">
+        <input type="date" id="quickAddDate" aria-label="Schedule date">
+        <span class="spacer"></span>
+        <button type="button" class="quick-cancel" id="quickAddCancel">Cancel</button>
+        <button type="submit" class="quick-save">Add task</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="quick-add-overlay" id="newListOverlay">
+    <form class="quick-add-box" id="newListForm">
+      <div style="font-weight:600;margin-bottom:12px;color:var(--text-dark)">Create a new list</div>
+      <input class="quick-add-input" type="date" id="newListDate" aria-label="List date">
+      <div class="quick-add-row">
+        <span class="spacer"></span>
+        <button type="button" class="quick-cancel" id="newListCancel">Cancel</button>
+        <button type="submit" class="quick-save">Create list</button>
+      </div>
+    </form>
+  </div>
 
   <script>
     // ── Supabase config — fill these in after creating your project ───
@@ -1071,7 +312,18 @@
     const DEVICE_ID_KEY = 'burner-device-id';
     const TOMBSTONE_META_KEY = 'burner-delete-tombstone-meta';
     const LOCAL_BACKUPS_KEY = 'burner-lists-backups';
+    const ADVANCED_PREFERENCES_KEY = 'burner-advanced-preferences';
+    const DESKTOP_SIDEBAR_KEY = 'burner-sidebar-open-desktop';
+    const desktopSidebarMedia = window.matchMedia('(min-width: 900px)');
     const _deviceId = getDeviceId();
+    const KANBAN_COLUMNS = ['backlog', 'doing', 'done'];
+    const INBOX_KEY = '__inbox__';
+
+    function taskKanbanColumn(task) {
+      if (task.done) return 'done';
+      if (task._meta && task._meta.doing) return 'doing';
+      return 'backlog';
+    }
 
     // ── Storage helpers ───────────────────────────────────────────────
     function getAllLists() { return _listsCache; }
@@ -1166,6 +418,24 @@
         order
       };
       return next;
+    }
+
+    function cloneTaskForCarry(task, zone, order) {
+      const timestamp = nowIso();
+      return normalizeTask({
+        ...task,
+        id: newTaskId(),
+        done: false,
+        _meta: {
+          ...((task && task._meta) || {}),
+          updatedAt: timestamp,
+          deviceId: _deviceId,
+          zone,
+          order,
+          doing: false,
+          boardOrder: order
+        }
+      }, zone, order, timestamp);
     }
 
     function normalizeListState(state) {
@@ -1435,6 +705,10 @@
             text: task.text || '',
             done: Boolean(task.done),
             sort_order: task._meta && Number.isFinite(task._meta.order) ? task._meta.order : index,
+            in_progress: Boolean(task._meta && task._meta.doing),
+            board_order: task._meta && Number.isFinite(task._meta.boardOrder) ? task._meta.boardOrder : index,
+            scheduled_date: key === INBOX_KEY ? null : getStateDate(key, state),
+            completed_at: task.done ? ((task._meta && task._meta.completedAt) || (task._meta && task._meta.updatedAt) || nowIso()) : null,
             updated_at: (task._meta && task._meta.updatedAt) || (state._meta && state._meta.updatedAt) || nowIso(),
             deleted_at: null
           });
@@ -1450,6 +724,10 @@
           text: task.text || '',
           done: Boolean(task.done),
           sort_order: task._meta && Number.isFinite(task._meta.order) ? task._meta.order : index,
+          in_progress: Boolean(task._meta && task._meta.doing),
+          board_order: task._meta && Number.isFinite(task._meta.boardOrder) ? task._meta.boardOrder : index,
+          scheduled_date: key === INBOX_KEY ? null : getStateDate(key, state),
+          completed_at: task.done ? ((task._meta && task._meta.completedAt) || (task._meta && task._meta.updatedAt) || nowIso()) : null,
           updated_at: (task._meta && task._meta.updatedAt) || (state._meta && state._meta.updatedAt) || nowIso(),
           deleted_at: null
         });
@@ -1463,11 +741,38 @@
           text: '',
           done: false,
           sort_order: 0,
+          in_progress: false,
+          board_order: 0,
+          scheduled_date: null,
+          completed_at: null,
           updated_at: meta.deletedAt || nowIso(),
           deleted_at: meta.deletedAt || nowIso()
         });
       });
       return rows;
+    }
+
+    function dedupeTaskRowsForUpsert(rows) {
+      const byId = new Map();
+      rows.forEach(row => {
+        const existing = byId.get(row.id);
+        if (!existing) {
+          byId.set(row.id, row);
+          return;
+        }
+        const existingMs = Date.parse(existing.updated_at || '') || 0;
+        const rowMs = Date.parse(row.updated_at || '') || 0;
+        if (rowMs > existingMs || (rowMs === existingMs && row.deleted_at && !existing.deleted_at)) {
+          byId.set(row.id, row);
+        }
+      });
+      if (byId.size !== rows.length) {
+        console.warn('[sync-v2] skipped duplicate task rows in one upsert batch', {
+          before: rows.length,
+          after: byId.size
+        });
+      }
+      return [...byId.values()];
     }
 
     function rowsToStates(listRows, taskRows) {
@@ -1499,7 +804,15 @@
           id: row.id,
           text: row.text || '',
           done: Boolean(row.done),
-          _meta: { updatedAt: row.updated_at || nowIso(), deviceId: 'remote-row', zone: row.zone, order: row.sort_order || 0 }
+          _meta: {
+            updatedAt: row.updated_at || nowIso(),
+            deviceId: 'remote-row',
+            zone: row.zone,
+            order: row.sort_order || 0,
+            doing: Boolean(row.in_progress),
+            boardOrder: row.board_order || 0,
+            completedAt: row.completed_at || null
+          }
         };
         if (row.zone === 'unscheduled') state.unscheduled.push(task);
         else if (state[row.zone]) state[row.zone].tasks.push(task);
@@ -1552,7 +865,7 @@
       if (!_currentUser || _rowSyncAvailable === false) return null;
 
       let listPath = `burner_lists_v2?select=key,date_key,front_name,back_name,quote,updated_at,deleted_at&user_id=eq.${encodeURIComponent(_currentUser.id)}`;
-      let taskPath = `burner_tasks_v2?select=id,list_key,zone,text,done,sort_order,updated_at,deleted_at&user_id=eq.${encodeURIComponent(_currentUser.id)}`;
+      let taskPath = `burner_tasks_v2?select=id,list_key,zone,text,done,sort_order,in_progress,board_order,scheduled_date,completed_at,updated_at,deleted_at&user_id=eq.${encodeURIComponent(_currentUser.id)}`;
       if (keys && keys.length) {
         listPath += `&key=${encodeURIComponent(restInFilter(keys))}`;
         taskPath += `&list_key=${encodeURIComponent(restInFilter(keys))}`;
@@ -1563,7 +876,13 @@
       ]);
       if (listError || taskError) {
         const error = listError || taskError;
-        if (error && (error.code === '42P01' || /burner_.*_v2/.test(error.message || ''))) {
+        const missingV2Schema = error && (
+          error.code === '42P01' ||
+          error.code === '42703' ||
+          error.code === 'PGRST204' ||
+          /burner_.*_v2|scheduled_date|completed_at|in_progress|board_order/i.test(error.message || '')
+        );
+        if (missingV2Schema) {
           _rowSyncAvailable = false;
           updateDebugDataset();
           console.warn('[sync-v2] row tables not available; falling back to blob sync');
@@ -1608,7 +927,7 @@
       });
       const pushKeys = keys.filter(k => !skipKeys.has(k));
       const listRows = pushKeys.filter(k => _listsCache[k]).map(k => stateToListRow(k, _listsCache[k]));
-      const taskRows = pushKeys.flatMap(k => _listsCache[k] ? stateToTaskRows(k, _listsCache[k]) : []);
+      const taskRows = dedupeTaskRowsForUpsert(pushKeys.flatMap(k => _listsCache[k] ? stateToTaskRows(k, _listsCache[k]) : []));
       if (listRows.length) {
         const { error } = await _sb.from('burner_lists_v2').upsert(listRows, { onConflict: 'user_id,key' });
         if (error) { console.error('[sync-v2] list upsert failed', error); showToast('⚠️ Sync failed: ' + error.message); return false; }
@@ -1793,8 +1112,8 @@
 
     function normalizeActiveKey() {
       const activeKey = getActiveKey();
-      if (_listsCache[activeKey] && !isDeletedKey(activeKey)) return;
-      const keys = Object.keys(_listsCache).filter(k => !isDeletedKey(k)).sort((a, b) => {
+      if (activeKey !== INBOX_KEY && _listsCache[activeKey] && !isDeletedKey(activeKey)) return;
+      const keys = Object.keys(_listsCache).filter(k => k !== INBOX_KEY && !isDeletedKey(k)).sort((a, b) => {
         const da = safeDateKey(_listsCache[a] && _listsCache[a].date, isDateKey(a) ? a : '0');
         const db = safeDateKey(_listsCache[b] && _listsCache[b].date, isDateKey(b) ? b : '0');
         return db.localeCompare(da);
@@ -1867,7 +1186,7 @@
         if (isDeletedKey(key)) return;
         if (!remote[key]) {
           merged[key] = _listsCache[key];
-          if (!isEmptyState(_listsCache[key])) {
+          if (!hasInitializedRemote() && !isEmptyState(_listsCache[key])) {
             _dirtyKeys.add(key);
             persistDirtyKeys();
             _scheduleSync();
@@ -2088,6 +1407,106 @@
         quote: ''
       };
     }
+    function ensureInboxState(lists = getAllLists()) {
+      if (!lists[INBOX_KEY]) lists[INBOX_KEY] = makeDefaultState(todayKey());
+      lists[INBOX_KEY].date = todayKey();
+      return lists[INBOX_KEY];
+    }
+    function getSmartView() {
+      const view = localStorage.getItem('burner-smart-view') || '';
+      return ['all', 'upcoming', 'previous'].includes(view) ? view : '';
+    }
+    function setSmartView(view) {
+      if (view) localStorage.setItem('burner-smart-view', view);
+      else localStorage.removeItem('burner-smart-view');
+      render();
+    }
+    function taskScheduledDate(listKey, state) {
+      return listKey === INBOX_KEY ? null : getStateDate(listKey, state);
+    }
+    function collectGlobalTaskEntries(options = {}) {
+      const entries = [];
+      Object.entries(getAllLists()).forEach(([listKey, state]) => {
+        if (!state || isRemoteTombstone(state) || isDeletedKey(listKey)) return;
+        ZONES.concat(['unscheduled']).forEach(zone => {
+          const tasks = zone === 'unscheduled' ? (state.unscheduled || []) : ((state[zone] && state[zone].tasks) || []);
+          tasks.forEach((task, index) => {
+            if (!(task.text || '').trim()) return;
+            if (options.openOnly && task.done) return;
+            entries.push({ listKey, state, zone, task, index, scheduledDate: taskScheduledDate(listKey, state) });
+          });
+        });
+      });
+      return entries;
+    }
+    function findGlobalTaskEntry(taskId) {
+      return collectGlobalTaskEntries().find(entry => entry.task.id === taskId) || null;
+    }
+    function defaultListKeyForDate(date) {
+      const lists = getAllLists();
+      return Object.keys(lists).find(key => key !== INBOX_KEY && !isDeletedKey(key) && getStateDate(key, lists[key]) === date) || date;
+    }
+    function moveTaskToDate(taskId, date) {
+      const lists = getAllLists();
+      const entry = findGlobalTaskEntry(taskId);
+      if (!entry) return false;
+      const targetKey = date ? defaultListKeyForDate(date) : INBOX_KEY;
+      if (targetKey === entry.listKey && (targetKey === INBOX_KEY || getStateDate(targetKey, lists[targetKey]) === date)) return true;
+      if (!lists[targetKey]) lists[targetKey] = makeDefaultState(date || todayKey());
+      if (targetKey === INBOX_KEY) ensureInboxState(lists);
+      const sourceTasks = entry.zone === 'unscheduled' ? entry.state.unscheduled : entry.state[entry.zone].tasks;
+      const nextSource = sourceTasks.filter((_, index) => index !== entry.index);
+      lists[entry.listKey] = withUpdatedTasks(entry.state, entry.zone, nextSource);
+      const targetState = lists[targetKey];
+      const targetZone = targetKey === INBOX_KEY ? 'unscheduled' : 'kitchen-sink';
+      const targetTasks = targetZone === 'unscheduled' ? (targetState.unscheduled || []) : ((targetState[targetZone] && targetState[targetZone].tasks) || []);
+      const moveStartedAt = nowIso();
+      lists[entry.listKey]._taskDeletes = { ...(lists[entry.listKey]._taskDeletes || {}), [taskId]: { deletedAt: moveStartedAt, deviceId: _deviceId } };
+      const movedAt = new Date(Date.parse(moveStartedAt) + 1).toISOString();
+      const moved = normalizeTask({ ...entry.task, _meta: { ...(entry.task._meta || {}), updatedAt: movedAt, deviceId: _deviceId, doing: false } }, targetZone, targetTasks.length, movedAt);
+      lists[targetKey] = withUpdatedTasks(targetState, targetZone, [...targetTasks, moved]);
+      saveAllLists(lists, [entry.listKey, targetKey]);
+      return true;
+    }
+    function mutateGlobalTask(taskId, patchFn) {
+      const entry = findGlobalTaskEntry(taskId);
+      if (!entry) return;
+      const task = { ...entry.task, _meta: { ...(entry.task._meta || {}) } };
+      patchFn(task);
+      task._meta.updatedAt = nowIso();
+      task._meta.deviceId = _deviceId;
+      if (task.done && !task._meta.completedAt) task._meta.completedAt = nowIso();
+      if (!task.done) task._meta.completedAt = null;
+      const tasks = entry.zone === 'unscheduled' ? entry.state.unscheduled.slice() : entry.state[entry.zone].tasks.slice();
+      tasks[entry.index] = task;
+      const lists = getAllLists();
+      lists[entry.listKey] = withUpdatedTasks(entry.state, entry.zone, tasks);
+      saveAllLists(lists, [entry.listKey]);
+    }
+    function deleteGlobalTask(taskId) {
+      const entry = findGlobalTaskEntry(taskId);
+      if (!entry) return;
+      const tasks = entry.zone === 'unscheduled' ? entry.state.unscheduled : entry.state[entry.zone].tasks;
+      entry.state._taskDeletes = { ...(entry.state._taskDeletes || {}), [taskId]: { deletedAt: nowIso(), deviceId: _deviceId } };
+      const lists = getAllLists();
+      lists[entry.listKey] = withUpdatedTasks(entry.state, entry.zone, tasks.filter((_, i) => i !== entry.index));
+      saveAllLists(lists, [entry.listKey]);
+    }
+    function createGlobalTask(text, date = null) {
+      const clean = (text || '').trim();
+      if (!clean) return null;
+      const lists = getAllLists();
+      const targetKey = date ? defaultListKeyForDate(date) : INBOX_KEY;
+      if (!lists[targetKey]) lists[targetKey] = makeDefaultState(date || todayKey());
+      if (targetKey === INBOX_KEY) ensureInboxState(lists);
+      const state = lists[targetKey];
+      const zone = targetKey === INBOX_KEY ? 'unscheduled' : 'kitchen-sink';
+      const tasks = zone === 'unscheduled' ? (state.unscheduled || []) : ((state[zone] && state[zone].tasks) || []);
+      const task = normalizeTask({ id: newTaskId(), text: clean, done: false }, zone, tasks.length);
+      lists[targetKey] = withUpdatedTasks(state, zone, [...tasks, task]);
+      saveAllLists(lists, [targetKey]);
+      return task;
+    }
     function newListKey() {
       return typeof crypto !== 'undefined' && crypto.randomUUID
         ? crypto.randomUUID()
@@ -2154,10 +1573,77 @@
       persistLocalLists(lists);
     }
 
+    // ── Kanban data mutation (bypasses DOM-driven saveState) ───────────
+    function findTaskEntry(state, taskId) {
+      for (const zone of ZONES) {
+        const tasks = (state[zone] && state[zone].tasks) || [];
+        const index = tasks.findIndex(t => t.id === taskId);
+        if (index !== -1) return { zone, tasks, index, task: tasks[index] };
+      }
+      const unscheduled = state.unscheduled || [];
+      const index = unscheduled.findIndex(t => t.id === taskId);
+      if (index !== -1) return { zone: 'unscheduled', tasks: unscheduled, index, task: unscheduled[index] };
+      return null;
+    }
+
+    function withUpdatedTasks(state, zone, tasks) {
+      const next = { ...state };
+      if (zone === 'unscheduled') next.unscheduled = tasks;
+      else next[zone] = { ...(state[zone] || {}), tasks };
+      return next;
+    }
+
+    function mutateTask(taskId, patchFn) {
+      const lists = getAllLists();
+      const key = getActiveKey();
+      const state = lists[key];
+      if (!state) return;
+      const entry = findTaskEntry(state, taskId);
+      if (!entry) return;
+      const task = { ...entry.task, _meta: { ...(entry.task._meta || {}) } };
+      patchFn(task);
+      task._meta.updatedAt = nowIso();
+      task._meta.deviceId = _deviceId;
+      const tasks = entry.tasks.slice();
+      tasks[entry.index] = task;
+      const nextLists = { ...lists, [key]: withUpdatedTasks(state, entry.zone, tasks) };
+      saveAllLists(nextLists, [key]);
+      // Deliberately no render()/renderKanban() here: this runs on every
+      // keystroke via the card's text input, and a full re-render would
+      // destroy and recreate the focused input, killing focus mid-type
+      // (same reason burner-view's saveState() doesn't re-render either).
+      // Callers that need a visible move (e.g. checkbox toggling column)
+      // update the DOM themselves.
+    }
+
+    function deleteTaskById(taskId) {
+      const lists = getAllLists();
+      const key = getActiveKey();
+      const state = lists[key];
+      if (!state) return;
+      const entry = findTaskEntry(state, taskId);
+      if (!entry) return;
+      markTaskDeleted({ id: taskId, text: entry.task.text || '' });
+      const tasks = entry.tasks.filter((_, i) => i !== entry.index);
+      const nextLists = { ...lists, [key]: withUpdatedTasks(state, entry.zone, tasks) };
+      saveAllLists(nextLists, [key]);
+      // Caller removes the DOM node directly; see note in mutateTask above.
+    }
+
     function updateUnscheduledSection() {
       const section = document.getElementById('unscheduledSection');
       const hasTasks = document.querySelectorAll('.task-list[data-zone="unscheduled"] .task-item').length > 0;
       section.classList.toggle('has-tasks', hasTasks);
+    }
+
+    function resizeProjectName(field) {
+      if (!field) return;
+      field.style.height = 'auto';
+      field.style.height = `${field.scrollHeight}px`;
+    }
+
+    function resizeProjectNames() {
+      document.querySelectorAll('.project-name').forEach(resizeProjectName);
     }
 
     // ── Date display ──────────────────────────────────────────────────
@@ -2180,22 +1666,43 @@
       return getStateDate(key, state);
     }
     function updateDateDisplay() {
-      document.getElementById('dateDisplay').textContent = formatDateKey(getListDate(getActiveKey()));
+      const display = document.getElementById('dateDisplay');
+      const date = getListDate(getActiveKey());
+      const isToday = date === todayKey();
+      display.hidden = false;
+      display.classList.toggle('is-today', isToday);
+      display.classList.remove('is-view-title');
+      document.getElementById('datePrimary').textContent = isToday ? "Today's List" : formatDateKey(date);
+      document.getElementById('dateSubtitle').textContent = isToday ? formatDateKey(date) : '';
     }
 
-    // ── Reschedule bar ────────────────────────────────────────────────
+    function updateSmartViewDisplay(title, subtitle) {
+      const display = document.getElementById('dateDisplay');
+      display.hidden = false;
+      display.classList.remove('is-today');
+      display.classList.add('is-view-title');
+      document.getElementById('datePrimary').textContent = title;
+      document.getElementById('dateSubtitle').textContent = subtitle;
+    }
+
+    // ── Contextual reschedule action ──────────────────────────────────
     function updateRescheduleBar() {
       const active = getActiveKey();
       const btn = document.getElementById('rescheduleBtn');
-      const isPast = active < todayKey();
+      const isPast = getListDate(active) < todayKey();
       const hasUndone = Array.from(document.querySelectorAll('.task-list .task-item'))
         .some(li => !li.querySelector('input[type="checkbox"]').checked && li.querySelector('.task-text').value.trim() !== '');
-      btn.classList.toggle('visible', isPast && hasUndone);
+      const isContextVisible = !getSmartView() && !document.body.classList.contains('kanban-view');
+      const isVisible = isPast && hasUndone && isContextVisible;
+      btn.classList.toggle('visible', isVisible);
+      document.querySelector('.top-bar').classList.toggle('has-reschedule', isVisible);
     }
 
     // ── Theme ─────────────────────────────────────────────────────────
+    const AVAILABLE_THEMES = ['default', 'dark', 'slate', 'clay', 'lavender'];
     function getTheme() {
-      return localStorage.getItem('burner-theme') || 'default';
+      const savedTheme = localStorage.getItem('burner-theme') || 'default';
+      return AVAILABLE_THEMES.includes(savedTheme) ? savedTheme : 'default';
     }
     function applyTheme(theme) {
       if (theme === 'default') {
@@ -2208,96 +1715,78 @@
       });
     }
     function setTheme(theme) {
+      if (!AVAILABLE_THEMES.includes(theme)) return;
       localStorage.setItem('burner-theme', theme);
       applyTheme(theme);
     }
 
+    // ── Advanced preferences ─────────────────────────────────────────
+    function getAdvancedPreferences() {
+      try {
+        return JSON.parse(localStorage.getItem(ADVANCED_PREFERENCES_KEY) || '{}') || {};
+      } catch (error) {
+        return {};
+      }
+    }
+    function getAdvancedPreference(name) {
+      return Boolean(getAdvancedPreferences()[name]);
+    }
+    function applyAdvancedPreferences(refreshView = true) {
+      const showQuotes = getAdvancedPreference('quotes');
+      const showAlternateViews = getAdvancedPreference('alternateViews');
+      document.body.classList.toggle('show-quotes', showQuotes);
+      document.body.classList.toggle('show-alternate-views', showAlternateViews);
+      document.getElementById('quotePreference').checked = showQuotes;
+      document.getElementById('alternateViewsPreference').checked = showAlternateViews;
+      if (!showAlternateViews) localStorage.setItem('burner-view-mode', 'burner');
+      if (refreshView) applyViewMode();
+    }
+    function setAdvancedPreference(name, enabled) {
+      const preferences = getAdvancedPreferences();
+      preferences[name] = Boolean(enabled);
+      localStorage.setItem(ADVANCED_PREFERENCES_KEY, JSON.stringify(preferences));
+      applyAdvancedPreferences();
+    }
+
     // ── Sidebar ───────────────────────────────────────────────────────
-    function toggleSidebar(open) {
+    function isDesktopSidebar() {
+      return desktopSidebarMedia.matches;
+    }
+    function toggleSidebar(open, remember = true) {
       const sidebar = document.getElementById('sidebar');
       const overlay = document.getElementById('sidebarOverlay');
       const isOpen = open !== undefined ? open : !sidebar.classList.contains('open');
       sidebar.classList.toggle('open', isOpen);
-      overlay.classList.toggle('visible', isOpen);
+      document.body.classList.toggle('sidebar-is-open', isOpen);
+      document.body.classList.toggle('sidebar-open-desktop', isOpen && isDesktopSidebar());
+      overlay.classList.toggle('visible', isOpen && !isDesktopSidebar());
+      const menuButton = document.getElementById('hamburgerBtn');
+      menuButton.setAttribute('aria-expanded', String(isOpen));
+      menuButton.setAttribute('aria-label', isOpen ? 'Close menu' : 'Open menu');
+      if (remember && isDesktopSidebar()) localStorage.setItem(DESKTOP_SIDEBAR_KEY, String(isOpen));
+    }
+    function applySidebarPreference() {
+      if (isDesktopSidebar()) {
+        toggleSidebar(localStorage.getItem(DESKTOP_SIDEBAR_KEY) === 'true', false);
+      } else {
+        toggleSidebar(false, false);
+      }
+    }
+    function closeSidebarAfterNavigation() {
+      if (!isDesktopSidebar()) toggleSidebar(false);
     }
 
     function renderSidebar() {
-      if (_openDatePickerKey) return; // don't tear down the DOM under an open native date picker
       const lists = getAllLists();
       const activeKey = getActiveKey();
-      const container = document.getElementById('sidebarLists');
-      const keys = Object.keys(lists).sort((a, b) => {
-        const da = (lists[a] && lists[a].date) || (a.length === 10 ? a : '0');
-        const db = (lists[b] && lists[b].date) || (b.length === 10 ? b : '0');
-        return db.localeCompare(da);
+      const openTasks = collectGlobalTaskEntries({ openOnly: true });
+      document.getElementById('allTasksCount').textContent = openTasks.length;
+      document.getElementById('todayCount').textContent = openTasks.filter(e => e.scheduledDate === todayKey()).length;
+      document.querySelectorAll('.sidebar-smart-item').forEach(btn => {
+        const isToday = btn.dataset.navView === 'today' && !getSmartView() && lists[activeKey] && getListDate(activeKey) === todayKey();
+        btn.classList.toggle('active', btn.dataset.smartView === getSmartView() || isToday);
       });
-
-      container.innerHTML = keys.map(key => {
-        const dateVal = getListDate(key);
-        return `<div class="sidebar-list-item${key === activeKey ? ' active' : ''}" data-key="${key}">
-          <div style="flex:1;min-width:0;">
-            <div class="list-date" style="display:flex;align-items:center;gap:4px;">
-              <span>${formatShortDate(dateVal)} · ${formatWeekday(dateVal)}</span>
-              <button class="list-edit-date-btn" data-key="${key}" title="Change date"><i data-lucide="calendar"></i></button>
-              <input type="date" class="list-date-picker" data-key="${key}" value="${dateVal}" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;">
-            </div>
-          </div>
-          <button class="delete-list-btn" data-key="${key}" title="Delete list"><i data-lucide="x"></i></button>
-        </div>`;
-      }).join('');
-
-      if (window.lucide) lucide.createIcons({ el: container });
-
-      container.querySelectorAll('.sidebar-list-item').forEach(item => {
-        item.addEventListener('click', e => {
-          if (e.target.closest('.delete-list-btn') || e.target.closest('.list-edit-date-btn')) return;
-          const key = item.dataset.key;
-          setActiveKey(key);
-          render();
-          toggleSidebar(false);
-        });
-      });
-      container.querySelectorAll('.list-edit-date-btn').forEach(btn => {
-        btn.addEventListener('click', e => {
-          e.stopPropagation();
-          const key = btn.dataset.key;
-          _openDatePickerKey = key;
-          const picker = container.querySelector(`.list-date-picker[data-key="${key}"]`);
-          if (picker) { picker.style.pointerEvents = 'auto'; picker.showPicker ? picker.showPicker() : picker.click(); }
-        });
-      });
-      container.querySelectorAll('.list-date-picker').forEach(input => {
-        input.addEventListener('change', e => {
-          e.stopPropagation();
-          _openDatePickerKey = null;
-          const key = input.dataset.key;
-          const newDate = input.value;
-          if (!newDate) return;
-          const ls = getAllLists();
-          if (ls[key]) { ls[key].date = newDate; saveAllLists(ls, [key]); }
-          if (key === getActiveKey()) updateDateDisplay();
-          renderSidebar();
-        });
-        input.addEventListener('blur', () => {
-          // Safety net: the user dismissed the picker without picking a date.
-          setTimeout(() => {
-            if (_openDatePickerKey === input.dataset.key) { _openDatePickerKey = null; renderSidebar(); }
-          }, 50);
-        });
-      });
-      container.querySelectorAll('.delete-list-btn').forEach(btn => {
-        btn.addEventListener('click', e => {
-          e.stopPropagation();
-          const key = btn.dataset.key;
-          const wasActive = key === getActiveKey();
-          deleteListKey(key);
-          if (wasActive) {
-            render();
-          } else {
-            renderSidebar();
-          }
-        });
-      });
+      if (window.lucide) lucide.createIcons({ el: document.getElementById('sidebar') });
     }
 
     // ── Task rendering ────────────────────────────────────────────────
@@ -2342,7 +1831,17 @@
     function openPasteModal(input, text) {
       const lines = getPasteLines(text);
       if (lines.length < 2) return false;
-      pendingPaste = { input, text, lines };
+      const li = input.closest('.task-item');
+      pendingPaste = {
+        input,
+        li,
+        list: input.closest('.task-list'),
+        zone: li && li.dataset.zone,
+        selectionStart: input.selectionStart ?? input.value.length,
+        selectionEnd: input.selectionEnd ?? input.value.length,
+        text,
+        lines
+      };
       document.getElementById('pasteModalBody').textContent =
         `This paste has ${lines.length} lines. Add each line as its own task, or keep everything in one task?`;
       document.getElementById('pasteModalOverlay').classList.add('visible');
@@ -2357,19 +1856,24 @@
 
     function pasteAsSingleTask() {
       if (!pendingPaste) return;
-      const { input, lines } = pendingPaste;
-      insertTextAtCursor(input, lines.join(' '));
-      input.dispatchEvent(new Event('input', { bubbles: true }));
+      const paste = pendingPaste;
+      const { input, lines, selectionStart, selectionEnd } = paste;
+      input.value =
+        input.value.slice(0, selectionStart) +
+        lines.join(' ') +
+        input.value.slice(selectionEnd);
+      input.setSelectionRange(selectionStart + lines.join(' ').length, selectionStart + lines.join(' ').length);
+      if (paste.li) paste.li.dataset.changed = '1';
+      saveState();
       closePasteModal();
+      input.focus();
     }
 
     function pasteAsMultipleTasks() {
       if (!pendingPaste) return;
-      const { input, lines } = pendingPaste;
-      const li = input.closest('.task-item');
-        const list = input.closest('.task-list');
+      const paste = pendingPaste;
+      const { input, lines, li, list, zone } = paste;
       if (!li || !list) { closePasteModal(); return; }
-      const zone = li.dataset.zone;
       let insertAfter = li;
       const linesToAdd = [...lines];
       if (input.value.trim() === '') {
@@ -2384,6 +1888,7 @@
       });
       saveState();
       closePasteModal();
+      (insertAfter.querySelector('.task-text') || input).focus();
       showToast(`${lines.length} tasks pasted`);
     }
 
@@ -2405,6 +1910,7 @@
 
       const cb = document.createElement('input');
       cb.type = 'checkbox';
+      cb.className = 'ds-checkbox';
       cb.checked = task.done;
 
       const text = document.createElement('input');
@@ -2441,14 +1947,9 @@
         postponeMenu.classList.remove('open');
         const taskText = text.value.trim();
         if (!taskText) return;
-        markTaskDeleted({ id: li.dataset.taskId, text: taskText });
-        const lists = getAllLists();
-        if (!lists[tomorrowKey]) lists[tomorrowKey] = makeDefaultState();
-        if (!lists[tomorrowKey].unscheduled) lists[tomorrowKey].unscheduled = [];
-        lists[tomorrowKey].unscheduled.push(normalizeTask({ id: li.dataset.taskId, text: taskText, done: false }, 'unscheduled', lists[tomorrowKey].unscheduled.length));
-        saveAllLists(lists, [tomorrowKey]);
-        li.remove();
         saveState();
+        moveTaskToDate(li.dataset.taskId, tomorrowKey);
+        render();
         showToast(`Postponed to ${tomorrowLabel}`);
       });
 
@@ -2561,9 +2062,14 @@
       saveState();
     }
 
-    // Allow dropping directly into empty (or anywhere in) a task-list / zone
+    // Allow dropping directly into a task list or anywhere in its surrounding
+    // zone. Empty lists are only a few pixels tall, so binding the <ul> alone
+    // makes drops on the visible section padding/add button look successful
+    // until the browser restores the dragged item to its original list.
     function bindZoneDropTargets() {
       document.querySelectorAll('.task-list').forEach(list => {
+        if (list.dataset.dropTargetBound === '1') return;
+        list.dataset.dropTargetBound = '1';
         list.addEventListener('dragover', e => {
           e.preventDefault();
           e.stopPropagation();
@@ -2586,6 +2092,33 @@
             dragSrc.dataset.changed = '1';
             saveState();
           }
+        });
+      });
+
+      document.querySelectorAll('.zone, .unscheduled-section').forEach(zone => {
+        if (zone.dataset.dropTargetBound === '1') return;
+        zone.dataset.dropTargetBound = '1';
+        const list = zone.querySelector('.task-list');
+        if (!list) return;
+        zone.addEventListener('dragover', e => {
+          e.preventDefault();
+          e.stopPropagation();
+          zone.classList.add('drag-over-zone');
+        });
+        zone.addEventListener('dragleave', e => {
+          if (!zone.contains(e.relatedTarget)) zone.classList.remove('drag-over-zone');
+        });
+        zone.addEventListener('drop', e => {
+          e.preventDefault();
+          e.stopPropagation();
+          zone.classList.remove('drag-over-zone');
+          if (!dragSrc) return;
+          // Drops on a card or the list itself are handled by the more precise
+          // handlers above. A drop on any other visible part of the zone goes
+          // to the end of that zone.
+          list.appendChild(dragSrc);
+          dragSrc.dataset.changed = '1';
+          saveState();
         });
       });
     }
@@ -2659,8 +2192,150 @@
       closeQuoteModal();
     }
 
+    // ── Inbox / aggregate task views ──────────────────────────────────
+    function smartTaskElement(entry) {
+      const li = document.createElement('li');
+      li.className = 'smart-task';
+      li.dataset.taskId = entry.task.id;
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.className = 'ds-checkbox';
+      checkbox.checked = Boolean(entry.task.done);
+      checkbox.setAttribute('aria-label', 'Complete task');
+      const textWrap = document.createElement('div');
+      const input = document.createElement('input');
+      input.className = 'smart-task-text';
+      input.value = entry.task.text || '';
+      const meta = document.createElement('div');
+      meta.className = 'smart-task-meta';
+      meta.textContent = entry.scheduledDate ? `${formatShortDate(entry.scheduledDate)} · ${entry.zone.replaceAll('-', ' ')}` : 'No date';
+      textWrap.append(input, meta);
+      const date = document.createElement('input');
+      date.type = 'date';
+      date.className = 'smart-date';
+      date.value = entry.scheduledDate || '';
+      date.setAttribute('aria-label', 'Schedule task');
+      const del = document.createElement('button');
+      del.className = 'smart-delete';
+      del.title = 'Delete task';
+      del.innerHTML = '<i data-lucide="x"></i>';
+      li.append(checkbox, textWrap, date, del);
+      checkbox.addEventListener('change', () => {
+        mutateGlobalTask(entry.task.id, task => { task.done = checkbox.checked; });
+        if (checkbox.checked) launchConfetti();
+        render();
+      });
+      input.addEventListener('input', () => mutateGlobalTask(entry.task.id, task => { task.text = input.value; }));
+      input.addEventListener('blur', () => {
+        if (!input.value.trim()) { deleteGlobalTask(entry.task.id); render(); }
+      });
+      input.addEventListener('keydown', event => {
+        if (event.key === 'Enter') { event.preventDefault(); openQuickAdd(entry.scheduledDate); }
+      });
+      date.addEventListener('change', () => {
+        moveTaskToDate(entry.task.id, date.value || null);
+        render();
+      });
+      del.addEventListener('click', () => { deleteGlobalTask(entry.task.id); render(); });
+      return li;
+    }
+    function renderSmartGroup(title, entries) {
+      if (!entries.length) return null;
+      const section = document.createElement('section');
+      section.className = 'smart-group';
+      const heading = document.createElement('div');
+      heading.className = 'smart-group-title';
+      heading.textContent = `${title} · ${entries.length}`;
+      const list = document.createElement('ul');
+      list.className = 'smart-list';
+      entries.forEach(entry => list.appendChild(smartTaskElement(entry)));
+      section.append(heading, list);
+      return section;
+    }
+    function openDatedList(key) {
+      setActiveKey(key);
+      localStorage.removeItem('burner-smart-view');
+      render();
+      closeSidebarAfterNavigation();
+    }
+    function renderListCards(keys) {
+      const fragment = document.createDocumentFragment();
+      keys.forEach(key => {
+        const state = getAllLists()[key];
+        const date = getListDate(key);
+        const taskCount = ZONES.concat(['unscheduled']).reduce((sum, zone) => {
+          const tasks = zone === 'unscheduled' ? (state.unscheduled || []) : ((state[zone] && state[zone].tasks) || []);
+          return sum + tasks.filter(task => !task.done && (task.text || '').trim()).length;
+        }, 0);
+        const card = document.createElement('div');
+        card.className = 'smart-list-card';
+        card.tabIndex = 0;
+        card.innerHTML = `<div><div class="smart-list-card-date">${formatShortDate(date)} · ${formatWeekday(date)}</div><div class="smart-list-card-meta">${taskCount} open task${taskCount === 1 ? '' : 's'}</div></div><i data-lucide="chevron-right"></i>`;
+        card.addEventListener('click', () => openDatedList(key));
+        card.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openDatedList(key); } });
+        fragment.appendChild(card);
+      });
+      return fragment;
+    }
+    function renderSmartView() {
+      const view = getSmartView();
+      const content = document.getElementById('smartViewContent');
+      const title = document.getElementById('smartViewTitle');
+      const subtitle = document.getElementById('smartViewSubtitle');
+      const open = collectGlobalTaskEntries({ openOnly: true });
+      const today = todayKey();
+      const headerBtn = document.getElementById('smartQuickAddBtn');
+      content.innerHTML = '';
+      headerBtn.hidden = false;
+      if (view === 'upcoming' || view === 'previous') {
+        const lists = getAllLists();
+        const keys = Object.keys(lists)
+          .filter(key => key !== INBOX_KEY && !isDeletedKey(key) && (view === 'upcoming' ? getListDate(key) > today : getListDate(key) < today))
+          .sort((a, b) => view === 'upcoming' ? getListDate(a).localeCompare(getListDate(b)) : getListDate(b).localeCompare(getListDate(a)));
+        title.textContent = view === 'upcoming' ? 'Upcoming' : 'Previous';
+        subtitle.textContent = view === 'upcoming' ? 'Plan and open future Burner Lists.' : 'Review your earlier Burner Lists.';
+        headerBtn.hidden = view === 'previous';
+        headerBtn.textContent = '+ New list';
+        content.appendChild(renderListCards(keys));
+      } else {
+        title.textContent = 'All Tasks';
+        subtitle.textContent = 'Every open task, in one place.';
+        headerBtn.textContent = '+ Add task';
+        const groups = [
+          ['Unscheduled', open.filter(entry => !entry.scheduledDate)],
+          ['Overdue', open.filter(entry => entry.scheduledDate && entry.scheduledDate < today).sort((a,b) => a.scheduledDate.localeCompare(b.scheduledDate))],
+          ['Today', open.filter(entry => entry.scheduledDate === today)],
+          ['Upcoming', open.filter(entry => entry.scheduledDate && entry.scheduledDate > today).sort((a,b) => a.scheduledDate.localeCompare(b.scheduledDate))]
+        ];
+        groups.forEach(([label, entries]) => { const group = renderSmartGroup(label, entries); if (group) content.appendChild(group); });
+      }
+      if (!content.children.length) {
+        const empty = document.createElement('div');
+        empty.className = 'smart-empty';
+        empty.textContent = view === 'upcoming' ? 'No upcoming lists yet.' : view === 'previous' ? 'No previous lists yet.' : 'Nothing open here.';
+        content.appendChild(empty);
+      }
+      updateSmartViewDisplay(title.textContent, subtitle.textContent);
+      if (window.lucide) lucide.createIcons({ el: document.getElementById('smartView') });
+    }
+
     // ── Main render ───────────────────────────────────────────────────
     function render() {
+      const smart = getSmartView();
+      document.body.classList.toggle('smart-view-mode', Boolean(smart));
+      if (smart) {
+        updateDebugDataset();
+        renderSmartView();
+        renderSidebar();
+        if (window.lucide) lucide.createIcons();
+        return;
+      }
+      renderBurner();
+      if (document.body.classList.contains('kanban-view')) renderKanban();
+      if (document.body.classList.contains('list-view')) renderStraightList();
+    }
+
+    function renderBurner() {
       normalizeActiveKey();
       updateDebugDataset();
       const lists = getAllLists();
@@ -2680,7 +2355,10 @@
       ['front-burner', 'back-burner', 'kitchen-sink'].forEach(zone => {
         const zoneState = state[zone] || { name: '', tasks: [] };
         const nameEl = document.querySelector(`.project-name[data-zone="${zone}"]`);
-        if (nameEl) nameEl.value = zoneState.name || '';
+        if (nameEl) {
+          nameEl.value = zoneState.name || '';
+          resizeProjectName(nameEl);
+        }
 
         const list = document.querySelector(`.task-list[data-zone="${zone}"]`);
         list.innerHTML = '';
@@ -2702,6 +2380,269 @@
       if (window.lucide) lucide.createIcons();
     }
 
+    // ── Kanban board (alternate view of the same tasks) ────────────────
+    function renderKanban() {
+      const lists = getAllLists();
+      const key = getActiveKey();
+      const state = lists[key];
+      if (!state) return;
+      const buckets = { backlog: [], doing: [], done: [] };
+      ZONES.concat(['unscheduled']).forEach(zone => {
+        const tasks = zone === 'unscheduled' ? (state.unscheduled || []) : ((state[zone] && state[zone].tasks) || []);
+        tasks.forEach((task, index) => {
+          const column = taskKanbanColumn(task);
+          const order = task._meta && Number.isFinite(task._meta.boardOrder) ? task._meta.boardOrder : index;
+          buckets[column].push({ task, order });
+        });
+      });
+      KANBAN_COLUMNS.forEach(column => {
+        const list = document.querySelector(`.kanban-list[data-column="${column}"]`);
+        list.innerHTML = '';
+        buckets[column]
+          .sort((a, b) => a.order - b.order)
+          .forEach(({ task }) => list.appendChild(createKanbanCard(task)));
+      });
+      if (window.lucide) lucide.createIcons({ el: document.getElementById('kanbanBoard') });
+    }
+
+    function renderStraightList() {
+      const root = document.getElementById('straightList');
+      const lists = getAllLists();
+      const key = getActiveKey();
+      const state = lists[key];
+      root.innerHTML = '';
+      if (!state) return;
+      const entries = [];
+      ZONES.concat(['unscheduled']).forEach(zone => {
+        const tasks = zone === 'unscheduled' ? (state.unscheduled || []) : ((state[zone] && state[zone].tasks) || []);
+        tasks.forEach((task, index) => entries.push({
+          listKey: key,
+          state,
+          zone,
+          task,
+          index,
+          scheduledDate: taskScheduledDate(key, state)
+        }));
+      });
+      const heading = document.createElement('div');
+      heading.className = 'smart-header';
+      heading.innerHTML = '<div><h2 class="smart-title">Tasks</h2><div class="smart-subtitle">A simple view of this list</div></div>';
+      const list = document.createElement('ul');
+      list.className = 'smart-list';
+      entries
+        .sort((a, b) => Number(a.task.done) - Number(b.task.done) || a.index - b.index)
+        .forEach(entry => list.appendChild(smartTaskElement(entry)));
+      if (!entries.length) {
+        const empty = document.createElement('div');
+        empty.className = 'smart-empty';
+        empty.textContent = 'No tasks in this list.';
+        root.append(heading, empty);
+      } else {
+        root.append(heading, list);
+      }
+      if (window.lucide) lucide.createIcons({ el: root });
+    }
+
+    function createKanbanCard(task) {
+      const li = document.createElement('li');
+      li.className = 'task-item';
+      li.draggable = true;
+      li.dataset.taskId = task.id;
+
+      const handle = document.createElement('span');
+      handle.className = 'drag-handle';
+      handle.innerHTML = '<i data-lucide="grip-vertical"></i>';
+      handle.setAttribute('aria-hidden', 'true');
+
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.className = 'ds-checkbox';
+      cb.checked = task.done;
+
+      const text = document.createElement('input');
+      text.type = 'text';
+      text.className = 'task-text' + (task.done ? ' completed' : '');
+      text.value = task.text;
+      text.placeholder = 'Task…';
+
+      const del = document.createElement('button');
+      del.className = 'delete-btn';
+      del.title = 'Delete';
+      del.innerHTML = '<i data-lucide="x"></i>';
+
+      li.append(handle, cb, text, del);
+
+      cb.addEventListener('change', () => {
+        text.classList.toggle('completed', cb.checked);
+        if (cb.checked) launchConfetti();
+        const targetColumn = cb.checked ? 'done' : (task._meta && task._meta.doing ? 'doing' : 'backlog');
+        const destList = document.querySelector(`.kanban-list[data-column="${targetColumn}"]`);
+        const boardOrder = destList ? Array.from(destList.children).filter(el => el !== li).length : 0;
+        mutateTask(task.id, t => {
+          t.done = cb.checked;
+          if (cb.checked) t._meta.doing = false;
+          t._meta.boardOrder = boardOrder;
+        });
+        if (destList) destList.appendChild(li);
+      });
+      text.addEventListener('input', () => {
+        mutateTask(task.id, t => { t.text = text.value; });
+      });
+      text.addEventListener('blur', () => {
+        if (text.value.trim() === '' && li.isConnected) {
+          deleteTaskById(task.id);
+          li.remove();
+        }
+      });
+      text.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if (text.value.trim() === '') return;
+          addKanbanTask(li.closest('.kanban-list').dataset.column);
+        } else if (e.key === 'Backspace' && text.value === '') {
+          e.preventDefault();
+          const column = li.closest('.kanban-list').dataset.column;
+          deleteTaskById(task.id);
+          li.remove();
+          const cards = document.querySelectorAll(`.kanban-list[data-column="${column}"] .task-text`);
+          if (cards.length) cards[cards.length - 1].focus();
+        }
+      });
+      del.addEventListener('click', () => {
+        deleteTaskById(task.id);
+        li.remove();
+      });
+
+      li.addEventListener('dragstart', handleKanbanDragStart);
+      li.addEventListener('dragend', handleKanbanDragEnd);
+      li.addEventListener('dragover', e => { e.preventDefault(); e.stopPropagation(); li.classList.add('drag-over'); });
+      li.addEventListener('dragleave', () => li.classList.remove('drag-over'));
+      li.addEventListener('drop', handleKanbanDrop);
+
+      return li;
+    }
+
+    function addKanbanTask(column) {
+      const list = document.querySelector(`.kanban-list[data-column="${column}"]`);
+      const emptyInput = Array.from(list.querySelectorAll('.task-text')).find(input => input.value.trim() === '');
+      if (emptyInput) { emptyInput.focus(); return; }
+
+      const lists = getAllLists();
+      const key = getActiveKey();
+      const state = lists[key];
+      if (!state) return;
+      const kitchenTasks = (state['kitchen-sink'] && state['kitchen-sink'].tasks) || [];
+      const task = {
+        id: newTaskId(),
+        text: '',
+        done: column === 'done',
+        _meta: {
+          updatedAt: nowIso(),
+          deviceId: _deviceId,
+          zone: 'kitchen-sink',
+          order: kitchenTasks.length,
+          doing: column === 'doing',
+          boardOrder: list.children.length
+        }
+      };
+      const nextLists = { ...lists, [key]: withUpdatedTasks(state, 'kitchen-sink', [...kitchenTasks, task]) };
+      saveAllLists(nextLists, [key]);
+      const li = createKanbanCard(task);
+      list.appendChild(li);
+      if (window.lucide) lucide.createIcons({ el: li });
+      li.querySelector('.task-text').focus();
+    }
+
+    // ── Kanban drag & drop ──────────────────────────────────────────────
+    let kanbanDragSrc = null;
+
+    function handleKanbanDragStart(e) {
+      kanbanDragSrc = this;
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', '');
+      setTimeout(() => this.style.opacity = '0.4', 0);
+    }
+    function handleKanbanDragEnd() {
+      this.style.opacity = '';
+      document.querySelectorAll('.kanban-list .task-item').forEach(li => li.classList.remove('drag-over'));
+      document.querySelectorAll('.kanban-column').forEach(col => col.classList.remove('drag-over-zone'));
+      persistKanbanOrder();
+    }
+    function handleKanbanDrop(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.classList.remove('drag-over');
+      if (!kanbanDragSrc || kanbanDragSrc === this) return;
+      const dstList = this.closest('.kanban-list');
+      const allDst = Array.from(dstList.children);
+      const insertBefore = allDst.indexOf(this);
+      dstList.insertBefore(kanbanDragSrc, allDst[insertBefore] || null);
+    }
+
+    function bindKanbanDropTargets() {
+      // Bound on the whole column (not just the <ul>) so dropping into an
+      // empty column — which has almost no height of its own — still works;
+      // otherwise there's nothing to drop onto and the drag just snaps back.
+      document.querySelectorAll('.kanban-column').forEach(column => {
+        const list = column.querySelector('.kanban-list');
+        column.addEventListener('dragover', e => {
+          e.preventDefault();
+          e.stopPropagation();
+          column.classList.add('drag-over-zone');
+        });
+        column.addEventListener('dragleave', () => {
+          column.classList.remove('drag-over-zone');
+        });
+        column.addEventListener('drop', e => {
+          e.preventDefault();
+          e.stopPropagation();
+          column.classList.remove('drag-over-zone');
+          if (!kanbanDragSrc) return;
+          // Card-level drop handlers (for reordering onto a specific card)
+          // stopPropagation, so reaching here means the drop landed on empty
+          // column space — append to the end of this column's list.
+          list.appendChild(kanbanDragSrc);
+        });
+      });
+    }
+
+    // Reads the current DOM order of all 3 kanban lists and persists column
+    // (done/doing/backlog) + per-column order for every task in one batch —
+    // this is what actually commits a drag-and-drop move.
+    function persistKanbanOrder() {
+      const lists = getAllLists();
+      const key = getActiveKey();
+      const state = lists[key];
+      if (!state) return;
+      let nextState = state;
+      KANBAN_COLUMNS.forEach(column => {
+        const list = document.querySelector(`.kanban-list[data-column="${column}"]`);
+        Array.from(list.children).forEach((li, index) => {
+          const entry = findTaskEntry(nextState, li.dataset.taskId);
+          if (!entry) return;
+          const task = { ...entry.task, _meta: { ...(entry.task._meta || {}) } };
+          task.done = column === 'done';
+          task._meta.doing = column === 'doing';
+          task._meta.boardOrder = index;
+          task._meta.updatedAt = nowIso();
+          task._meta.deviceId = _deviceId;
+          const tasks = entry.tasks.slice();
+          tasks[entry.index] = task;
+          nextState = withUpdatedTasks(nextState, entry.zone, tasks);
+
+          // Keep the dragged card's checkbox/strikethrough in sync with its
+          // new column (e.g. dropping into Done should show it checked)
+          // without rebuilding the whole board and losing drag state.
+          const cb = li.querySelector('input[type="checkbox"]');
+          const textEl = li.querySelector('.task-text');
+          if (cb) cb.checked = task.done;
+          if (textEl) textEl.classList.toggle('completed', task.done);
+        });
+      });
+      const nextLists = { ...lists, [key]: nextState };
+      saveAllLists(nextLists, [key]);
+    }
+
     // ── Toast ─────────────────────────────────────────────────────────
     function showToast(msg) {
       const toast = document.getElementById('toast');
@@ -2710,17 +2651,152 @@
       setTimeout(() => toast.classList.remove('show'), 2500);
     }
 
+    function dateOffsetKey(days) {
+      const date = new Date();
+      date.setDate(date.getDate() + days);
+      return dateKeyFromDate(date);
+    }
+    function parseQuickTask(value, explicitDate) {
+      let text = (value || '').trim();
+      let date = explicitDate || null;
+      if (!date) {
+        const lower = text.toLowerCase();
+        if (/\s+today$/.test(lower)) { date = todayKey(); text = text.replace(/\s+today$/i, '').trim(); }
+        else if (/\s+tomorrow$/.test(lower)) { date = dateOffsetKey(1); text = text.replace(/\s+tomorrow$/i, '').trim(); }
+        else {
+          const weekdays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+          const match = lower.match(new RegExp(`\\s+(${weekdays.join('|')})$`, 'i'));
+          if (match) {
+            const target = weekdays.indexOf(match[1].toLowerCase());
+            const now = new Date();
+            let offset = (target - now.getDay() + 7) % 7;
+            if (offset === 0) offset = 7;
+            date = dateOffsetKey(offset);
+            text = text.slice(0, match.index).trim();
+          }
+        }
+      }
+      return { text, date };
+    }
+    function openQuickAdd(date = null) {
+      const overlay = document.getElementById('quickAddOverlay');
+      document.getElementById('quickAddInput').value = '';
+      document.getElementById('quickAddDate').value = date || '';
+      overlay.classList.add('visible');
+      setTimeout(() => document.getElementById('quickAddInput').focus(), 0);
+    }
+    function closeQuickAdd() { document.getElementById('quickAddOverlay').classList.remove('visible'); }
+    function openTodayList() {
+      const lists = getAllLists();
+      const key = defaultListKeyForDate(todayKey());
+      if (!lists[key]) {
+        lists[key] = makeDefaultState(todayKey());
+        saveAllLists(lists, [key]);
+      }
+      openDatedList(key);
+    }
+    function openNewListModal() {
+      const tomorrow = dateOffsetKey(1);
+      const input = document.getElementById('newListDate');
+      input.min = tomorrow;
+      input.value = tomorrow;
+      document.getElementById('newListOverlay').classList.add('visible');
+      setTimeout(() => input.showPicker ? input.showPicker() : input.focus(), 0);
+    }
+    function closeNewListModal() { document.getElementById('newListOverlay').classList.remove('visible'); }
+    function openRescheduleModal() {
+      const input = document.getElementById('rescheduleDate');
+      input.min = todayKey();
+      input.value = todayKey();
+      const overlay = document.getElementById('rescheduleModalOverlay');
+      overlay.classList.add('visible');
+      overlay.setAttribute('aria-hidden', 'false');
+      setTimeout(() => {
+        input.focus();
+        try { if (input.showPicker) input.showPicker(); } catch (error) {}
+      }, 0);
+    }
+    function closeRescheduleModal() {
+      const overlay = document.getElementById('rescheduleModalOverlay');
+      overlay.classList.remove('visible');
+      overlay.setAttribute('aria-hidden', 'true');
+      document.getElementById('rescheduleBtn').focus();
+    }
+
+    // ── Shared view mode (Burner List / Kanban / List) ─────────────────
+    function getViewMode() {
+      if (!getAdvancedPreference('alternateViews')) return 'burner';
+      const mode = localStorage.getItem('burner-view-mode');
+      return ['burner', 'kanban', 'list'].includes(mode) ? mode : 'burner';
+    }
+    function setViewMode(mode) {
+      localStorage.setItem('burner-view-mode', mode);
+      applyViewMode();
+    }
+    function applyViewMode() {
+      const mode = getViewMode();
+      document.body.classList.toggle('kanban-view', mode === 'kanban');
+      document.body.classList.toggle('list-view', mode === 'list');
+      const select = document.getElementById('viewModeSelect');
+      if (select) select.value = mode;
+      if (mode === 'kanban') renderKanban();
+      else if (mode === 'list') renderStraightList();
+      else renderBurner();
+    }
+    // Set the class synchronously before the first boot render() call below,
+    // so that render()'s "refresh kanban if visible" branch is accurate from
+    // the very first paint instead of flashing the wrong view.
+    document.body.classList.toggle('kanban-view', getViewMode() === 'kanban');
+    document.body.classList.toggle('list-view', getViewMode() === 'list');
+    document.getElementById('viewModeSelect').addEventListener('change', event => setViewMode(event.target.value));
+
     // ── Event bindings ────────────────────────────────────────────────
     document.getElementById('hamburgerBtn').addEventListener('click', () => toggleSidebar());
+    document.getElementById('sidebarCloseBtn').addEventListener('click', () => toggleSidebar(false));
     document.getElementById('sidebarOverlay').addEventListener('click', () => toggleSidebar(false));
-    document.getElementById('newListBtn').addEventListener('click', () => {
-      const key = newListKey();
-      const lists = getAllLists();
-      lists[key] = makeDefaultState();
-      saveAllLists(lists, [key]);
-      setActiveKey(key);
+    document.getElementById('sidebarAddTaskBtn').addEventListener('click', () => { openQuickAdd(); closeSidebarAfterNavigation(); });
+    document.querySelectorAll('.sidebar-smart-item[data-smart-view]').forEach(btn => {
+      btn.addEventListener('click', () => { setSmartView(btn.dataset.smartView); closeSidebarAfterNavigation(); });
+    });
+    document.querySelector('[data-nav-view="today"]').addEventListener('click', openTodayList);
+    document.getElementById('smartQuickAddBtn').addEventListener('click', () => getSmartView() === 'upcoming' ? openNewListModal() : openQuickAdd());
+    document.getElementById('quickAddCancel').addEventListener('click', closeQuickAdd);
+    document.getElementById('quickAddOverlay').addEventListener('click', event => { if (event.target.id === 'quickAddOverlay') closeQuickAdd(); });
+    document.getElementById('quickAddForm').addEventListener('submit', event => {
+      event.preventDefault();
+      const parsed = parseQuickTask(document.getElementById('quickAddInput').value, document.getElementById('quickAddDate').value);
+      if (!parsed.text) return;
+      createGlobalTask(parsed.text, parsed.date);
+      closeQuickAdd();
       render();
-      toggleSidebar(false);
+      showToast(parsed.date ? `Scheduled for ${formatShortDate(parsed.date)}` : 'Added without a date');
+    });
+    document.getElementById('newListCancel').addEventListener('click', closeNewListModal);
+    document.getElementById('newListOverlay').addEventListener('click', event => { if (event.target.id === 'newListOverlay') closeNewListModal(); });
+    document.getElementById('newListForm').addEventListener('submit', event => {
+      event.preventDefault();
+      const date = document.getElementById('newListDate').value;
+      if (!date || date <= todayKey()) { showToast('Choose a future date'); return; }
+      const lists = getAllLists();
+      const existingKey = Object.keys(lists).find(key => key !== INBOX_KEY && !isDeletedKey(key) && getListDate(key) === date);
+      if (existingKey) { closeNewListModal(); openDatedList(existingKey); return; }
+      const key = newListKey();
+      lists[key] = makeDefaultState(date);
+      saveAllLists(lists, [key]);
+      closeNewListModal();
+      openDatedList(key);
+      showToast(`List created for ${formatShortDate(date)}`);
+    });
+    document.getElementById('rescheduleCancel').addEventListener('click', closeRescheduleModal);
+    document.getElementById('rescheduleModalOverlay').addEventListener('click', event => {
+      if (event.target.id === 'rescheduleModalOverlay') closeRescheduleModal();
+    });
+    document.addEventListener('keydown', event => {
+      const editing = /INPUT|TEXTAREA|SELECT/.test(document.activeElement && document.activeElement.tagName);
+      if ((event.key === 'q' || event.key === 'Q') && !editing && !event.metaKey && !event.ctrlKey && !event.altKey) { event.preventDefault(); openQuickAdd(); }
+      if (event.key === 'Escape' && document.getElementById('quickAddOverlay').classList.contains('visible')) closeQuickAdd();
+      if (event.key === 'Escape' && document.getElementById('newListOverlay').classList.contains('visible')) closeNewListModal();
+      if (event.key === 'Escape' && document.getElementById('rescheduleModalOverlay').classList.contains('visible')) closeRescheduleModal();
     });
 
     let addTaskPointerHandled = false;
@@ -2745,10 +2821,36 @@
     }, true);
     document.addEventListener('click', e => handleAddTaskButtonEvent(e));
 
+    let kanbanAddPointerHandled = false;
+    function handleKanbanAddButtonEvent(e, immediate = false) {
+      const btn = e.target.closest && e.target.closest('.kanban-add-btn');
+      if (!btn) return;
+      if (immediate) {
+        kanbanAddPointerHandled = true;
+        e.preventDefault();
+        addKanbanTask(btn.dataset.column);
+        return;
+      }
+      if (kanbanAddPointerHandled) {
+        kanbanAddPointerHandled = false;
+        return;
+      }
+      addKanbanTask(btn.dataset.column);
+    }
+    document.addEventListener('pointerdown', e => handleKanbanAddButtonEvent(e, true), true);
+    document.addEventListener('mousedown', e => {
+      if (!kanbanAddPointerHandled) handleKanbanAddButtonEvent(e, true);
+    }, true);
+    document.addEventListener('click', e => handleKanbanAddButtonEvent(e));
+
     // Project name auto-save
-    document.querySelectorAll('.project-name').forEach(input => {
-      input.addEventListener('input', () => saveState());
+    document.querySelectorAll('.project-name').forEach(field => {
+      field.addEventListener('input', () => {
+        resizeProjectName(field);
+        saveState();
+      });
     });
+    window.addEventListener('resize', resizeProjectNames);
 
     // Quote modal bindings
     document.getElementById('addQuoteBtn').addEventListener('click', openQuoteModal);
@@ -2777,71 +2879,52 @@
     document.querySelectorAll('.theme-swatch').forEach(sw => {
       sw.addEventListener('click', () => setTheme(sw.dataset.theme));
     });
+    document.getElementById('quotePreference').addEventListener('change', event => setAdvancedPreference('quotes', event.target.checked));
+    document.getElementById('alternateViewsPreference').addEventListener('change', event => setAdvancedPreference('alternateViews', event.target.checked));
+    desktopSidebarMedia.addEventListener('change', applySidebarPreference);
 
-    // Reschedule: carry uncompleted tasks to a new list for the next day
-    document.getElementById('rescheduleBtn').addEventListener('click', () => {
+    // Reschedule: move uncompleted tasks to the chosen day's Kitchen Sink while preserving identity.
+    document.getElementById('rescheduleBtn').addEventListener('click', openRescheduleModal);
+    document.getElementById('rescheduleForm').addEventListener('submit', event => {
+      event.preventDefault();
+      const nextDate = document.getElementById('rescheduleDate').value;
+      if (!nextDate || nextDate < todayKey()) {
+        showToast('Choose today or a future date');
+        return;
+      }
       const lists = getAllLists();
       const activeKey = getActiveKey();
       const state = lists[activeKey] || makeDefaultState();
+      const nextKey = defaultListKeyForDate(nextDate);
 
-      const d = new Date(activeKey + 'T12:00:00');
-      d.setDate(d.getDate() + 1);
-      const nextKey = dateKeyFromDate(d);
-
-      const nextState = lists[nextKey] || makeDefaultState();
-      if (!nextState.unscheduled) nextState.unscheduled = [];
+      let nextState = lists[nextKey] || makeDefaultState(nextDate);
+      const destination = ((nextState['kitchen-sink'] && nextState['kitchen-sink'].tasks) || []).slice();
 
       let moved = 0;
-      ['front-burner', 'back-burner', 'kitchen-sink'].forEach(zone => {
-        const undone = (state[zone].tasks || []).filter(t => !t.done && t.text && t.text.trim() !== '');
+      ZONES.concat(['unscheduled']).forEach(zone => {
+        const source = zone === 'unscheduled' ? (state.unscheduled || []) : ((state[zone] && state[zone].tasks) || []);
+        const undone = source.filter(t => !t.done && t.text && t.text.trim() !== '');
         if (undone.length) {
-          nextState.unscheduled = [...undone.map(t => ({ ...t, done: false })), ...nextState.unscheduled];
+          undone.forEach(task => {
+            const moveStartedAt = nowIso();
+            state._taskDeletes = { ...(state._taskDeletes || {}), [task.id]: { deletedAt: moveStartedAt, deviceId: _deviceId } };
+            const movedAt = new Date(Date.parse(moveStartedAt) + 1).toISOString();
+            destination.push(normalizeTask({ ...task, _meta: { ...(task._meta || {}), updatedAt: movedAt, deviceId: _deviceId, doing: false } }, 'kitchen-sink', destination.length, movedAt));
+          });
           moved += undone.length;
-          state[zone].tasks = state[zone].tasks.map(t => (t.done || t.text.trim() === '') ? t : { ...t, done: true });
+          const remaining = source.filter(t => t.done || !(t.text || '').trim());
+          if (zone === 'unscheduled') state.unscheduled = remaining;
+          else state[zone] = { ...state[zone], tasks: remaining };
         }
       });
 
+      nextState = withUpdatedTasks(nextState, 'kitchen-sink', destination);
       lists[activeKey] = state;
       lists[nextKey] = nextState;
       saveAllLists(lists, [activeKey, nextKey]);
+      closeRescheduleModal();
       render();
-      if (moved > 0) showToast(`${moved} task${moved > 1 ? 's' : ''} moved to ${formatShortDate(nextKey)}`);
-    });
-
-    // Export
-    document.getElementById('exportBtn').addEventListener('click', () => {
-      const data = { 'burner-lists': getAllLists(), 'burner-active': getActiveKey() };
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `burner-list-${todayKey()}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      showToast('Data exported!');
-    });
-
-    // Import
-    document.getElementById('importBtn').addEventListener('click', () => {
-      document.getElementById('importFile').click();
-    });
-    document.getElementById('importFile').addEventListener('change', e => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = ev => {
-        try {
-          const imported = JSON.parse(ev.target.result);
-          if (imported['burner-lists']) saveAllLists(imported['burner-lists'], Object.keys(imported['burner-lists']));
-          if (imported['burner-active']) setActiveKey(imported['burner-active']);
-          render();
-          showToast('Data imported!');
-        } catch {
-          showToast('Invalid file');
-        }
-      };
-      reader.readAsText(file);
-      e.target.value = '';
+      if (moved > 0) showToast(`${moved} task${moved > 1 ? 's' : ''} moved to ${formatShortDate(nextDate)}`);
     });
 
     // ── Auth helpers ──────────────────────────────────────────────────
@@ -2874,6 +2957,7 @@
           persistLocalLists(_listsCache);
           if (!getActiveKey() || !_listsCache[getActiveKey()]) setActiveKey(key);
           bindZoneDropTargets();
+          bindKanbanDropTargets();
           render();
         }
       } catch(e) {}
@@ -2892,10 +2976,7 @@
         });
         persistDirtyKeys();
         _scheduleSync();
-      } else if (Object.keys(_listsCache).length > 0) {
-        Object.keys(_listsCache).forEach(k => {
-          if (!isEmptyState(_listsCache[k])) _dirtyKeys.add(k);
-        });
+      } else if (_dirtyKeys.size > 0) {
         persistDirtyKeys();
         _scheduleSync();
       }
@@ -2907,6 +2988,7 @@
       }
       if (!getActiveKey() || !_listsCache[getActiveKey()]) setActiveKey(key);
       bindZoneDropTargets();
+      bindKanbanDropTargets();
       render();
       startRemoteSync();
     }
@@ -2963,6 +3045,8 @@
 
     // ── Init ──────────────────────────────────────────────────────────
     applyTheme(getTheme());
+    applyAdvancedPreferences(false);
+    applySidebarPreference();
     if (window.lucide) lucide.createIcons();
     setInterval(ensureRemoteSync, 5000);
     window.addEventListener('storage', e => {
@@ -2974,8 +3058,14 @@
     });
     document.addEventListener('focusout', flushPendingSyncRender);
     if ('serviceWorker' in navigator) {
+      let serviceWorkerRefreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (serviceWorkerRefreshing) return;
+        serviceWorkerRefreshing = true;
+        window.location.reload();
+      });
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
+        navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
           .then(reg => reg.update())
           .catch(err => console.warn('[pwa] service worker registration failed:', err));
       });

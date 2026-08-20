@@ -6,95 +6,15 @@
   <title>Burner List Styleguide</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/generated/design-tokens.css?v=40">
   <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #e8e0d4;
-      --paper: #fffdf7;
-      --border: #e8e2d9;
-      --border-strong: #d6d0c6;
-      --text-dark: #3a3530;
-      --text-mid: #6b6258;
-      --text-soft: #c0afa7;
-      --text-faint: #b5ad9f;
-      --text-faintest: #c5b9b0;
-      --hover-tint: rgba(180,165,140,0.08);
-      --hover-tint-strong: rgba(180,165,140,0.18);
-      --danger: #b04040;
-      --success: #6f8a54;
       --shadow-soft: 0 16px 42px rgba(58, 53, 48, 0.08);
       --shadow-popover: 0 8px 28px rgba(58, 53, 48, 0.12);
-      --radius-xs: 4px;
-      --radius-sm: 5px;
-      --radius-md: 6px;
-      --radius-lg: 8px;
-      --space-1: 4px;
-      --space-2: 8px;
-      --space-3: 12px;
-      --space-4: 16px;
-      --space-5: 20px;
-      --space-6: 24px;
-      --space-8: 32px;
-      --space-10: 40px;
-    }
-
-    [data-theme="sage"] {
-      --bg: #dde4d8;
-      --paper: #fbfcf8;
-      --border: #e2e8dd;
-      --border-strong: #c9d3c2;
-      --text-dark: #333a2f;
-      --text-mid: #5d6b54;
-      --text-soft: #8a9580;
-      --text-faint: #a8b29e;
-      --text-faintest: #bcc6b3;
-      --hover-tint: rgba(140,165,120,0.08);
-      --hover-tint-strong: rgba(140,165,120,0.18);
-    }
-
-    [data-theme="slate"] {
-      --bg: #dde3e6;
-      --paper: #f8fafb;
-      --border: #e1e7ea;
-      --border-strong: #c3ced3;
-      --text-dark: #2f3a3e;
-      --text-mid: #54676d;
-      --text-soft: #80949a;
-      --text-faint: #9eb0b5;
-      --text-faintest: #b3c2c6;
-      --hover-tint: rgba(120,150,160,0.08);
-      --hover-tint-strong: rgba(120,150,160,0.18);
-    }
-
-    [data-theme="clay"] {
-      --bg: #ead9d0;
-      --paper: #fdf8f5;
-      --border: #ece0d8;
-      --border-strong: #d9c4b6;
-      --text-dark: #3e2f28;
-      --text-mid: #6e564a;
-      --text-soft: #9c8276;
-      --text-faint: #b59c8e;
-      --text-faintest: #c8b1a4;
-      --hover-tint: rgba(180,140,120,0.08);
-      --hover-tint-strong: rgba(180,140,120,0.18);
-    }
-
-    [data-theme="lavender"] {
-      --bg: #e2dde8;
-      --paper: #faf8fc;
-      --border: #e6e1ec;
-      --border-strong: #cfc5d8;
-      --text-dark: #352f3c;
-      --text-mid: #61566d;
-      --text-soft: #8c8198;
-      --text-faint: #a89db3;
-      --text-faintest: #bcb0c6;
-      --hover-tint: rgba(150,130,170,0.08);
-      --hover-tint-strong: rgba(150,130,170,0.18);
     }
 
     body {
@@ -309,13 +229,6 @@
     }
 
     .type-ui { font-size: 14px; color: var(--text-dark); }
-    .type-label {
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--text-mid);
-      text-transform: uppercase;
-      letter-spacing: 0.6px;
-    }
     .type-muted { font-size: 13px; color: var(--text-soft); }
 
     .button-row {
@@ -377,52 +290,47 @@
     .icon-btn:hover { color: var(--text-mid); }
 
     .paper {
-      border: 1px solid var(--border);
-      border-radius: var(--radius-xs);
       overflow: hidden;
       background: var(--paper);
     }
 
     .columns {
+      position: relative;
       display: grid;
       grid-template-columns: 1fr 1fr;
       min-height: 360px;
     }
 
+    .columns::before {
+      content: "";
+      position: absolute;
+      top: var(--space-10);
+      bottom: 0;
+      left: 50%;
+      width: 1px;
+      background: var(--border);
+      pointer-events: none;
+    }
+
     .column { display: flex; flex-direction: column; }
-    .column:first-child { border-right: 1px solid var(--border); }
     .zone {
-      padding: var(--space-8);
+      padding: var(--space-10);
       border-top: 1px solid var(--border);
       flex: 1;
     }
+    .zone-content {
+      width: 100%;
+      max-width: var(--layout-zone-content-max);
+    }
+    .column:first-child .zone-content { margin-left: auto; }
+    .column:last-child .zone-content { margin-right: auto; }
+    .zone.zone--project { padding-top: var(--space-8); }
     .column:first-child .zone:first-child,
     .column:last-child .zone:first-child { border-top: none; }
 
-    .zone-label {
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--text-mid);
-      text-transform: uppercase;
-      letter-spacing: 0.6px;
-      margin-bottom: var(--space-2);
-    }
+    .zone-label { margin-bottom: var(--space-2); }
 
-    .project-name {
-      display: block;
-      width: 100%;
-      background: none;
-      border: none;
-      border-bottom: 1.5px solid var(--border-strong);
-      font-size: 15px;
-      font-weight: 600;
-      color: var(--text-dark);
-      padding: 4px 0;
-      margin-bottom: var(--space-3);
-      outline: none;
-    }
-
-    .project-name::placeholder { color: var(--text-faint); font-weight: 400; }
+    .zone--kitchen-sink .zone-label { margin-bottom: var(--space-4); }
 
     .task-list {
       list-style: none;
@@ -440,6 +348,7 @@
     }
 
     .task-item:last-child { border-bottom: none; }
+    .task-list > .task-item:last-child { border-bottom: 1px solid var(--border); }
     .task-item:hover { background: var(--hover-tint); }
 
     .drag-handle,
@@ -465,8 +374,8 @@
     }
 
     .task-item input[type="checkbox"]:checked {
-      background: var(--text-mid);
-      border-color: var(--text-mid);
+      background: var(--text-soft);
+      border-color: var(--text-soft);
     }
 
     .task-item input[type="checkbox"]:checked::after {
@@ -476,7 +385,7 @@
       top: 1px;
       width: 5px;
       height: 8px;
-      border: 2px solid #fff;
+      border: 2px solid var(--paper);
       border-top: none;
       border-left: none;
       transform: rotate(45deg);
@@ -515,15 +424,32 @@
       height: 16px;
       border: 1.5px solid currentColor;
       border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      line-height: 1;
+      position: relative;
+      display: inline-block;
+      font-size: 0;
+      color: var(--text-dark);
     }
+
+    .plus::before,
+    .plus::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 7px;
+      height: 1.5px;
+      border-radius: 1px;
+      background: currentColor;
+      transform: translate(-50%, -50%);
+    }
+
+    .plus::after { transform: translate(-50%, -50%) rotate(90deg); }
 
     .sidebar-demo {
       width: 300px;
+      min-height: 560px;
+      display: flex;
+      flex-direction: column;
       border: 1px solid var(--border);
       border-radius: var(--radius-lg);
       overflow: hidden;
@@ -532,30 +458,48 @@
     }
 
     .sidebar-header {
-      padding: 24px 20px 16px;
+      padding: var(--space-5);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      border-bottom: 1px solid var(--border);
     }
 
-    .sidebar-header h4 {
-      font-size: 16px;
-      font-weight: 600;
+    .sidebar-brand {
+      display: flex;
+      align-items: center;
     }
+
+    .sidebar-brand-wordmark {
+      display: block;
+      width: 142px;
+      height: auto;
+      object-fit: contain;
+    }
+
+    .sidebar-brand-wordmark--dark { display: none; }
+    body[data-theme="dark"] .sidebar-brand-wordmark--light { display: none; }
+    body[data-theme="dark"] .sidebar-brand-wordmark--dark { display: block; }
 
     .sidebar-list-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
       padding: 12px 20px;
-      border-bottom: 1px solid var(--border);
     }
 
     .sidebar-list-item.active { background: var(--hover-tint-strong); }
     .sidebar-list-item:hover { background: var(--hover-tint); }
     .list-date { font-size: 14px; font-weight: 500; color: var(--text-dark); }
     .list-preview { font-size: 11px; color: var(--text-faint); margin-top: 2px; }
+    .sidebar-demo-footer { margin-top: auto; }
+    .sidebar-demo-section { padding: var(--space-4) var(--space-5); }
+    .sidebar-demo-label { margin-bottom: var(--space-2); color: var(--text-faint); font-size: 11px; font-weight: 500; letter-spacing: .6px; text-transform: uppercase; }
+    .sidebar-demo-credit { color: var(--text-soft); font-size: 12px; line-height: 1.45; }
+    .sidebar-demo-credit a { display: block; width: fit-content; margin-top: var(--space-1); color: var(--text-mid); text-underline-offset: 2px; }
+    .sidebar-demo-swatches { display: flex; gap: 10px; }
+    .sidebar-demo-swatch { width: 26px; height: 26px; border: 2px solid transparent; border-radius: 50%; }
+    .sidebar-demo-swatch.active { border-color: var(--text-mid); }
+    .sidebar-demo-account { color: var(--text-soft); font-size: 12px; }
 
     .quote-box {
       display: flex;
@@ -604,6 +548,22 @@
       flex-wrap: wrap;
     }
 
+    .context-header-demo {
+      position: relative;
+      min-height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: var(--space-3);
+      background: var(--paper);
+    }
+
+    .context-header-demo .ds-button { position: absolute; right: var(--space-3); }
+    .context-header-demo .ds-date-lockup { max-width: 34%; }
+    .context-header-demo .ds-date-heading { text-align: center; }
+
     .form-field {
       width: 100%;
       border: 1px solid var(--border-strong);
@@ -626,6 +586,36 @@
       padding: 10px 20px;
       border-radius: var(--radius-md);
     }
+
+    .auth-demo {
+      max-width: 360px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    .auth-logo { display: flex; justify-content: center; margin-bottom: var(--space-1); }
+    .auth-brand-wordmark { display: block; width: min(100%, var(--layout-auth-wordmark-width)); height: auto; }
+    .auth-brand-wordmark--dark { display: none; }
+    body[data-theme="dark"] .auth-brand-wordmark--light { display: none; }
+    body[data-theme="dark"] .auth-brand-wordmark--dark { display: block; }
+    .auth-tagline { color: var(--text-mid); font-size: 13px; margin: 2px 0 24px; }
+    .auth-tabs { display: flex; justify-content: center; gap: 20px; border-bottom: 1px solid var(--border); margin-bottom: 18px; }
+    .auth-tab { padding: 8px 0; color: var(--text-faint); font-size: 14px; }
+    .auth-tab.active { color: var(--text-dark); border-bottom: 2px solid var(--text-mid); }
+    .divider-label { display: flex; align-items: center; gap: 12px; color: var(--text-faint); font-size: 12px; margin: 15px 0; }
+    .divider-label::before, .divider-label::after { content: ""; height: 1px; background: var(--border); flex: 1; }
+    .full-width { width: 100%; justify-content: center; }
+    .state-stack { display: grid; gap: 10px; }
+    .state-row { border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-size: 13px; color: var(--text-mid); display: flex; align-items: center; gap: 9px; }
+    .state-row.error { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 28%, var(--border)); }
+    .kanban-demo { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .kanban-demo .lane { border: 1px solid var(--border); border-radius: 4px; padding: 16px; min-height: 130px; }
+    .kanban-demo h4 { text-transform: uppercase; letter-spacing: .6px; font-size: 11px; color: var(--text-mid); margin-bottom: 12px; }
+    .mini-task { border-bottom: 1px solid var(--border); padding: 7px 0; font-size: 13px; }
+    .platform-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .platform-table th, .platform-table td { text-align: left; border-bottom: 1px solid var(--border); padding: 11px 10px; vertical-align: top; }
+    .platform-table th { color: var(--text-mid); font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
+    .theme-control { display: inline-flex; align-items: center; gap: 10px; margin-top: 18px; font-size: 13px; color: var(--text-mid); }
+    .theme-control select { border: 1px solid var(--border-strong); border-radius: 6px; background: var(--paper); color: var(--text-dark); padding: 7px 28px 7px 9px; }
 
     .usage {
       border-left: 3px solid var(--border-strong);
@@ -661,6 +651,7 @@
 
     @media (max-width: 900px) {
       .page { grid-template-columns: 1fr; }
+      .page > *, .grid > *, section, .sample, .spec-card { min-width: 0; }
       .nav {
         position: static;
         height: auto;
@@ -668,12 +659,26 @@
         border-bottom: 1px solid var(--border);
       }
       .content { padding: var(--space-6); }
-      .grid, .grid.three, .theme-strip, .do-dont { grid-template-columns: 1fr; }
+      .grid, .grid.three, .theme-strip, .do-dont, .kanban-demo { grid-template-columns: 1fr; }
       .columns { grid-template-columns: 1fr; }
+      .columns::before { display: none; }
       .column:first-child { border-right: none; border-bottom: 1px solid var(--border); }
       .hero h2 { font-size: 40px; }
     }
+
+    @media (max-width: 520px) {
+      .nav { padding: var(--space-5); }
+      .content { padding: var(--space-5); }
+      .section-head { align-items: flex-start; flex-direction: column; gap: var(--space-2); }
+      .token-row { grid-template-columns: 88px minmax(0, 1fr) 70px; gap: var(--space-2); }
+      .platform-table { display: block; max-width: 100%; overflow-x: auto; }
+      .button-row { align-items: flex-start; }
+      .context-header-demo { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-2); }
+      .context-header-demo .ds-date-lockup { max-width: 100%; }
+      .context-header-demo .ds-button { position: static; }
+    }
   </style>
+  <link rel="stylesheet" href="/assets/design-system/components.css?v=40">
 </head>
 <body>
   <div class="page">
@@ -682,7 +687,7 @@
         <div class="brand-mark"><i data-lucide="flame"></i></div>
         <div>
           <h1>Burner List</h1>
-          <p>Styleguide v0.1</p>
+          <p>Design system v1.0</p>
         </div>
       </div>
       <a href="#principles">Design Principles</a>
@@ -690,11 +695,15 @@
       <a href="#themes">Themes</a>
       <a href="#typography">Typography</a>
       <a href="#buttons">Buttons</a>
+      <a href="#authentication">Authentication</a>
       <a href="#tasks">Task System</a>
       <a href="#layout">List Layout</a>
       <a href="#navigation">Navigation</a>
+      <a href="#views">Aggregate Views</a>
       <a href="#feedback">Feedback</a>
-      <a href="#claude">Claude Design Brief</a>
+      <a href="#states">System States</a>
+      <a href="#platforms">Platform Mapping</a>
+      <a href="#guidelines">Usage Guidelines</a>
     </aside>
 
     <main class="content">
@@ -702,6 +711,11 @@
         <div class="eyebrow">Product Direction</div>
         <h2>A quiet daily planner with paper-like constraints.</h2>
         <p>Burner List should feel focused, warm, and low-friction. The interface is an operational tool, but not a corporate dashboard: it should have the calm of paper, the precision of a task app, and just enough charm to make daily prioritization feel humane.</p>
+        <label class="theme-control">Preview theme
+          <select id="themeSelect">
+            <option value="">Sand</option><option value="dark">Dark</option><option value="slate">Slate</option><option value="clay">Clay</option><option value="lavender">Lavender</option>
+          </select>
+        </label>
       </header>
 
       <section id="principles">
@@ -731,23 +745,27 @@
         <div class="grid">
           <div class="spec-card">
             <div class="label">Color Tokens</div>
-            <div class="token-row"><span>paper</span><div class="swatch" style="background:#fffdf7"></div><code>#fffdf7</code></div>
-            <div class="token-row"><span>bg</span><div class="swatch" style="background:#e8e0d4"></div><code>#e8e0d4</code></div>
-            <div class="token-row"><span>border</span><div class="swatch" style="background:#e8e2d9"></div><code>#e8e2d9</code></div>
-            <div class="token-row"><span>border-strong</span><div class="swatch" style="background:#d6d0c6"></div><code>#d6d0c6</code></div>
-            <div class="token-row"><span>text-dark</span><div class="swatch" style="background:#3a3530"></div><code>#3a3530</code></div>
-            <div class="token-row"><span>text-mid</span><div class="swatch" style="background:#6b6258"></div><code>#6b6258</code></div>
-            <div class="token-row"><span>text-soft</span><div class="swatch" style="background:#c0afa7"></div><code>#c0afa7</code></div>
+            <div class="token-row"><span>paper</span><div class="swatch" style="background:var(--paper)"></div><code data-css-token="--paper"></code></div>
+            <div class="token-row"><span>field-surface</span><div class="swatch" style="background:var(--field-surface)"></div><code data-css-token="--field-surface"></code></div>
+            <div class="token-row"><span>bg</span><div class="swatch" style="background:var(--bg)"></div><code data-css-token="--bg"></code></div>
+            <div class="token-row"><span>border</span><div class="swatch" style="background:var(--border)"></div><code data-css-token="--border"></code></div>
+            <div class="token-row"><span>border-strong</span><div class="swatch" style="background:var(--border-strong)"></div><code data-css-token="--border-strong"></code></div>
+            <div class="token-row"><span>text-dark</span><div class="swatch" style="background:var(--text-dark)"></div><code data-css-token="--text-dark"></code></div>
+            <div class="token-row"><span>text-mid</span><div class="swatch" style="background:var(--text-mid)"></div><code data-css-token="--text-mid"></code></div>
+            <div class="token-row"><span>text-soft</span><div class="swatch" style="background:var(--text-soft)"></div><code data-css-token="--text-soft"></code></div>
           </div>
           <div class="spec-card">
             <div class="label">Shape + Spacing</div>
-            <div class="token-row"><span>radius-xs</span><div>Paper, quote panels</div><code>4px</code></div>
-            <div class="token-row"><span>radius-sm</span><div>Task hover, small buttons</div><code>5px</code></div>
-            <div class="token-row"><span>radius-md</span><div>Inputs, menus</div><code>6px</code></div>
-            <div class="token-row"><span>radius-lg</span><div>Modals, cards</div><code>8px</code></div>
-            <div class="token-row"><span>space-2</span><div>Small gaps</div><code>8px</code></div>
-            <div class="token-row"><span>space-5</span><div>Card padding</div><code>20px</code></div>
-            <div class="token-row"><span>space-10</span><div>Zone padding</div><code>40px</code></div>
+            <div class="token-row"><span>radius-xs</span><div>Paper, quote panels</div><code data-css-token="--radius-xs"></code></div>
+            <div class="token-row"><span>radius-sm</span><div>Task hover, small buttons</div><code data-css-token="--radius-sm"></code></div>
+            <div class="token-row"><span>radius-md</span><div>Inputs, menus</div><code data-css-token="--radius-md"></code></div>
+            <div class="token-row"><span>radius-lg</span><div>Modals, cards</div><code data-css-token="--radius-lg"></code></div>
+            <div class="token-row"><span>space-2</span><div>Small gaps</div><code data-css-token="--space-2"></code></div>
+            <div class="token-row"><span>space-5</span><div>Card padding</div><code data-css-token="--space-5"></code></div>
+            <div class="token-row"><span>space-10</span><div>Wide horizontal padding</div><code data-css-token="--space-10"></code></div>
+            <div class="token-row"><span>space-20</span><div>Reserved large spacing</div><code data-css-token="--space-20"></code></div>
+            <div class="token-row"><span>zone-content-max</span><div>Readable Burner List width</div><code data-css-token="--layout-zone-content-max"></code></div>
+            <div class="token-row"><span>auth-wordmark-width</span><div>Authentication brand lockup</div><code data-css-token="--layout-auth-wordmark-width"></code></div>
           </div>
         </div>
       </section>
@@ -761,8 +779,8 @@
           <p>Themes are quiet tonal shifts. They should not change component hierarchy or interaction patterns.</p>
         </div>
         <div class="theme-strip">
-          <div class="theme-card"><div class="theme-chip" style="background:#e8e0d4"></div><strong>Sand</strong><span>Default, warm paper</span></div>
-          <div class="theme-card" data-theme="sage"><div class="theme-chip"></div><strong>Sage</strong><span>Soft green focus</span></div>
+          <div class="theme-card"><div class="theme-chip" style="background:var(--bg)"></div><strong>Sand</strong><span>Default, warm paper</span></div>
+          <div class="theme-card" data-theme="dark"><div class="theme-chip"></div><strong>Dark</strong><span>Low-light focus</span></div>
           <div class="theme-card" data-theme="slate"><div class="theme-chip"></div><strong>Slate</strong><span>Cool neutral</span></div>
           <div class="theme-card" data-theme="clay"><div class="theme-chip"></div><strong>Clay</strong><span>Warm rose</span></div>
           <div class="theme-card" data-theme="lavender"><div class="theme-chip"></div><strong>Lavender</strong><span>Muted purple</span></div>
@@ -780,7 +798,7 @@
         <div class="grid three">
           <div class="spec-card"><div class="label">Brand</div><div class="type-title">Burner List</div><p class="type-muted">Caveat, 26-48px, 700</p></div>
           <div class="spec-card"><div class="label">UI Text</div><p class="type-ui">Project names, task input text, button labels, and body copy use Inter for clarity.</p><p class="type-muted">Inter, 13-16px</p></div>
-          <div class="spec-card"><div class="label">Section Label</div><p class="type-label">Front Burner</p><p class="type-muted">Uppercase, 11px, 0.6px letter spacing</p></div>
+          <div class="spec-card"><div class="label">Section Label</div><p class="ds-zone-label">Front Burner</p><p class="type-muted">Title case, 12px at every width, 400 weight, faint semantic color</p></div>
         </div>
       </section>
 
@@ -794,11 +812,33 @@
         </div>
         <div class="sample">
           <div class="button-row">
-            <button class="btn-primary">+ New List</button>
-            <button class="btn-secondary">Export</button>
-            <button class="btn-ghost"><span class="plus">+</span> Add task</button>
-            <button class="icon-btn" title="Edit"><i data-lucide="pencil"></i></button>
-            <button class="icon-btn" title="Delete"><i data-lucide="trash-2"></i></button>
+            <button class="ds-button ds-button--primary">+ New List</button>
+            <button class="ds-button ds-button--secondary">Sign out</button>
+            <button class="ds-button ds-button--ghost"><span class="plus">+</span> Add task</button>
+            <button class="ds-button ds-button--icon" title="Edit" aria-label="Edit"><i data-lucide="pencil"></i></button>
+            <button class="ds-button ds-button--icon" title="Delete" aria-label="Delete"><i data-lucide="trash-2"></i></button>
+            <button class="ds-button ds-button--primary" disabled>Disabled</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="authentication">
+        <div class="section-head">
+          <div><div class="eyebrow">06</div><h3>Authentication</h3></div>
+          <p>The same branded surface is used on web and iOS. Platform plumbing may differ; hierarchy and appearance should not.</p>
+        </div>
+        <div class="sample">
+          <div class="auth-demo">
+            <div class="auth-logo" role="img" aria-label="Burner List">
+              <img class="auth-brand-wordmark auth-brand-wordmark--light" src="/assets/brand/burner-list-wordmark.svg?v=38" alt="">
+              <img class="auth-brand-wordmark auth-brand-wordmark--dark" src="/assets/brand/burner-list-wordmark-dark.svg?v=38" alt="">
+            </div>
+            <div class="auth-tagline">Work through your day focusing on your two important things</div>
+            <div class="auth-tabs"><span class="auth-tab active">Sign in</span><span class="auth-tab">Sign up</span></div>
+            <input class="ds-field" style="margin-bottom:10px" placeholder="Email"><input class="ds-field" placeholder="Password" type="password">
+            <button class="ds-button ds-button--primary full-width" style="margin-top:10px">Sign in</button>
+            <div class="divider-label">or</div>
+            <button class="ds-button ds-button--secondary full-width">G&nbsp;&nbsp; Continue with Google</button>
           </div>
         </div>
       </section>
@@ -806,7 +846,7 @@
       <section id="tasks">
         <div class="section-head">
           <div>
-            <div class="eyebrow">06</div>
+            <div class="eyebrow">07</div>
             <h3>Task System</h3>
           </div>
           <p>Rows are lightweight. Controls appear subtly, with the task text remaining dominant.</p>
@@ -817,14 +857,14 @@
             <ul class="task-list">
               <li class="task-item">
                 <span class="drag-handle"><i data-lucide="grip-vertical"></i></span>
-                <input type="checkbox">
+                <input class="ds-checkbox" type="checkbox">
                 <input class="task-text" value="Write launch notes">
                 <button class="postpone-btn"><i data-lucide="calendar"></i></button>
                 <button class="delete-btn"><i data-lucide="x"></i></button>
               </li>
               <li class="task-item">
                 <span class="drag-handle"><i data-lucide="grip-vertical"></i></span>
-                <input type="checkbox" checked>
+                <input class="ds-checkbox" type="checkbox" checked>
                 <input class="task-text completed" value="Review sync behavior">
                 <button class="postpone-btn"><i data-lucide="calendar"></i></button>
                 <button class="delete-btn"><i data-lucide="x"></i></button>
@@ -838,9 +878,21 @@
               <h4>Paste tasks</h4>
               <div class="modal-body">This paste has 3 lines. Add each line as its own task, or keep everything in one task?</div>
               <div class="modal-actions">
-                <button class="btn-secondary">Cancel</button>
-                <button class="btn-secondary">Single task</button>
-                <button class="btn-primary">Multiple tasks</button>
+                <button class="ds-button ds-button--secondary">Cancel</button>
+                <button class="ds-button ds-button--secondary">Single task</button>
+                <button class="ds-button ds-button--primary">Multiple tasks</button>
+              </div>
+            </div>
+          </div>
+          <div class="sample">
+            <div class="label">Reschedule Date Dialog</div>
+            <div class="modal-spec">
+              <h4>Reschedule unfinished tasks</h4>
+              <div class="modal-body">Choose the day these tasks should move to. They’ll be added to that day’s Kitchen Sink.</div>
+              <input class="ds-field" type="date" value="2026-08-19" aria-label="New date">
+              <div class="modal-actions" style="margin-top:var(--space-4)">
+                <button class="ds-button ds-button--secondary">Cancel</button>
+                <button class="ds-button ds-button--primary">Reschedule</button>
               </div>
             </div>
           </div>
@@ -850,7 +902,7 @@
       <section id="layout">
         <div class="section-head">
           <div>
-            <div class="eyebrow">07</div>
+            <div class="eyebrow">08</div>
             <h3>Burner List Layout</h3>
           </div>
           <p>The two-column paper layout is the core product object. It should remain immediately recognizable.</p>
@@ -858,24 +910,30 @@
         <div class="paper">
           <div class="columns">
             <div class="column">
-              <div class="zone">
-                <div class="zone-label">Front Burner</div>
-                <input class="project-name" value="Most important project">
-                <ul class="task-list">
-                  <li class="task-item"><input type="checkbox"><input class="task-text" value="Define the next app architecture"></li>
-                  <li class="task-item"><input type="checkbox"><input class="task-text" value="Sketch Today view"></li>
-                </ul>
+              <div class="zone zone--project">
+                <div class="zone-content">
+                  <div class="zone-label ds-zone-label">Front Burner</div>
+                  <textarea class="project-name ds-project-name" rows="1">Primary project</textarea>
+                  <ul class="task-list">
+                    <li class="task-item"><input class="ds-checkbox" type="checkbox"><input class="task-text" value="Define the next app architecture"></li>
+                    <li class="task-item"><input class="ds-checkbox" type="checkbox"><input class="task-text" value="Sketch Today view"></li>
+                  </ul>
+                </div>
               </div>
             </div>
             <div class="column">
-              <div class="zone">
-                <div class="zone-label">Back Burner</div>
-                <input class="project-name" value="Secondary priority">
-                <ul class="task-list"><li class="task-item"><input type="checkbox"><input class="task-text" value="Plan iOS wrapper"></li></ul>
+              <div class="zone zone--project">
+                <div class="zone-content">
+                  <div class="zone-label ds-zone-label">Back Burner</div>
+                  <textarea class="project-name ds-project-name" rows="1">Get some interesting jobs going</textarea>
+                  <ul class="task-list"><li class="task-item"><input class="ds-checkbox" type="checkbox"><input class="task-text" value="Plan iOS wrapper"></li></ul>
+                </div>
               </div>
-              <div class="zone">
-                <div class="zone-label">Kitchen Sink</div>
-                <ul class="task-list"><li class="task-item"><input type="checkbox"><input class="task-text" value="Small tasks and errands"></li></ul>
+              <div class="zone zone--kitchen-sink">
+                <div class="zone-content">
+                  <div class="zone-label ds-zone-label">Kitchen Sink</div>
+                  <ul class="task-list"><li class="task-item"><input class="ds-checkbox" type="checkbox"><input class="task-text" value="Small tasks and errands"></li></ul>
+                </div>
               </div>
             </div>
           </div>
@@ -885,7 +943,7 @@
       <section id="navigation">
         <div class="section-head">
           <div>
-            <div class="eyebrow">08</div>
+            <div class="eyebrow">09</div>
             <h3>Navigation + Supporting Surfaces</h3>
           </div>
           <p>The sidebar is utilitarian and compact. Avoid turning it into a decorative panel.</p>
@@ -893,20 +951,64 @@
         <div class="grid">
           <div class="sidebar-demo">
             <div class="sidebar-header">
-              <h4>My Lists</h4>
-              <button class="btn-primary">+ New</button>
+              <div class="sidebar-brand">
+                <img class="sidebar-brand-wordmark sidebar-brand-wordmark--light" src="/assets/brand/burner-list-wordmark.svg?v=38" alt="Burner List">
+                <img class="sidebar-brand-wordmark sidebar-brand-wordmark--dark" src="/assets/brand/burner-list-wordmark-dark.svg?v=38" alt="Burner List">
+              </div>
+              <button class="ds-button ds-button--icon ds-button--compact-icon" aria-label="Close menu"><i data-lucide="panel-left"></i></button>
             </div>
             <div class="sidebar-list-item active">
-              <div><div class="list-date">5 Jul · Sunday</div><div class="list-preview">4 tasks</div></div>
-              <button class="icon-btn"><i data-lucide="x"></i></button>
+              <div><div class="list-date">Today's List</div><div class="list-preview">12 tasks</div></div>
             </div>
             <div class="sidebar-list-item">
-              <div><div class="list-date">4 Jul · Saturday</div><div class="list-preview">Rescheduled</div></div>
-              <button class="icon-btn"><i data-lucide="x"></i></button>
+              <div><div class="list-date">All Tasks</div><div class="list-preview">24 tasks</div></div>
+            </div>
+            <div class="sidebar-demo-footer">
+              <div class="sidebar-demo-section">
+                <div class="sidebar-demo-label">Credit</div>
+                <div class="sidebar-demo-credit">The Burner List method was created by Jake Knapp. This independent app is inspired by his original paper system. <a href="https://www.ideo.com/journal/sprint-author-jake-knapp-built-you-a-new-to-do-list">Read the original method</a></div>
+              </div>
+              <div class="sidebar-demo-section">
+                <div class="sidebar-demo-label">Theme</div>
+                <div class="sidebar-demo-swatches">
+                  <span class="sidebar-demo-swatch active" style="background:#e8e0d4"></span>
+                  <span class="sidebar-demo-swatch" style="background:#1c1a17"></span>
+                  <span class="sidebar-demo-swatch" style="background:#dde3e6"></span>
+                  <span class="sidebar-demo-swatch" style="background:#ead9d0"></span>
+                  <span class="sidebar-demo-swatch" style="background:#e2dde8"></span>
+                </div>
+              </div>
+              <div class="sidebar-demo-section">
+                <div class="sidebar-demo-label">Account</div>
+                <div class="sidebar-demo-account">name@example.com</div>
+                <button class="ds-button ds-button--secondary full-width" style="margin-top:var(--space-3)">Sign out</button>
+              </div>
             </div>
           </div>
           <div class="sample">
-            <div class="label">Quote Panel</div>
+            <div class="label">Matched Navigation Controls</div>
+            <div class="button-row">
+              <button class="ds-button ds-button--icon ds-button--compact-icon" aria-label="Open menu"><i data-lucide="panel-left"></i></button>
+              <button class="ds-button ds-button--icon ds-button--compact-icon" aria-label="Close menu"><i data-lucide="panel-left"></i></button>
+            </div>
+            <div class="label" style="margin-top:var(--space-6)">Application Date Header</div>
+            <div class="ds-date-lockup is-today">
+              <div class="ds-date-heading">Today's List</div>
+              <div class="ds-date-subtitle">Tuesday, August 18, 2026</div>
+            </div>
+            <div class="label" style="margin-top:var(--space-6)">Past List Header + Contextual Action</div>
+            <div class="context-header-demo">
+              <div class="ds-date-lockup">
+                <div class="ds-date-heading">Monday, August 17, 2026</div>
+              </div>
+              <button class="ds-button ds-button--primary">Reschedule</button>
+            </div>
+            <div class="label" style="margin-top:var(--space-6)">Aggregate View Header</div>
+            <div class="ds-date-lockup is-view-title">
+              <div class="ds-date-heading">Upcoming</div>
+              <div class="ds-date-subtitle">Plan and open future Burner Lists.</div>
+            </div>
+            <div class="label" style="margin-top:var(--space-6)">Quote Panel</div>
             <div class="quote-box">
               <div class="quote-banner-text">"Make it easier to do what matters."</div>
               <div class="button-row">
@@ -914,6 +1016,15 @@
                 <button class="icon-btn"><i data-lucide="trash-2"></i></button>
               </div>
             </div>
+            <div class="label" style="margin-top:var(--space-6)">Hidden Advanced Preferences</div>
+            <label class="ds-setting-row">
+              <span class="ds-setting-copy"><span class="ds-setting-title">Quote of the day</span><span class="ds-setting-description">Hidden until the user opts in.</span></span>
+              <input class="ds-checkbox" type="checkbox">
+            </label>
+            <label class="ds-setting-row">
+              <span class="ds-setting-copy"><span class="ds-setting-title">Alternate views</span><span class="ds-setting-description">Enables Kanban and general list views.</span></span>
+              <input class="ds-checkbox" type="checkbox" checked>
+            </label>
           </div>
         </div>
       </section>
@@ -921,7 +1032,7 @@
       <section id="feedback">
         <div class="section-head">
           <div>
-            <div class="eyebrow">09</div>
+            <div class="eyebrow">11</div>
             <h3>Feedback + States</h3>
           </div>
           <p>Feedback should be short, calm, and out of the user's way.</p>
@@ -929,15 +1040,64 @@
         <div class="grid three">
           <div class="spec-card"><div class="label">Toast</div><div class="toast-demo">3 tasks pasted</div></div>
           <div class="spec-card"><div class="label">Sync Badge</div><div class="toast-demo" style="background:var(--text-mid)">Saving...</div></div>
-          <div class="spec-card"><div class="label">Danger</div><button class="btn-secondary" style="color:var(--danger)">Delete list</button></div>
+          <div class="spec-card"><div class="label">Danger</div><button class="ds-button ds-button--secondary" style="color:var(--danger)">Delete list</button></div>
         </div>
       </section>
 
-      <section id="claude">
+      <section id="views">
+        <div class="section-head">
+          <div><div class="eyebrow">10</div><h3>Aggregate + Kanban Views</h3></div>
+          <p>Alternative views are advanced, opt-in tools. The Burner List remains the default product surface.</p>
+        </div>
+        <div class="kanban-demo">
+          <div class="lane"><h4>Backlog</h4><div class="mini-task">Write launch notes</div><div class="mini-task">Review onboarding</div></div>
+          <div class="lane"><h4>Doing</h4><div class="mini-task">Build Today view</div></div>
+          <div class="lane"><h4>Done</h4><div class="mini-task" style="text-decoration:line-through;color:var(--text-faint)">Define tokens</div></div>
+        </div>
+      </section>
+
+      <section id="platforms">
+        <div class="section-head">
+          <div><div class="eyebrow">13</div><h3>Web ↔ iOS Component Mapping</h3></div>
+          <p>One design language, implemented in CSS and SwiftUI with platform-appropriate behavior.</p>
+        </div>
+        <div class="spec-card">
+          <table class="platform-table">
+            <thead><tr><th>Component</th><th>Web</th><th>iOS</th><th>Shared contract</th></tr></thead>
+            <tbody>
+              <tr><td>Paper surface</td><td><code>.paper</code></td><td><code>BurnerTheme.paper</code></td><td>Warm, edge-to-edge canvas with uninterrupted zone dividers</td></tr>
+              <tr><td>Zone</td><td><code>.zone</code></td><td><code>zoneView</code></td><td>12px title-case label at every width, unframed project title, task stack</td></tr>
+              <tr><td>Task row</td><td><code>.task-item</code></td><td><code>taskRow</code></td><td>17px circular control, 14px text, separator</td></tr>
+              <tr><td>Authentication</td><td><code>.auth-box</code></td><td><code>AuthenticationView</code></td><td>360px max width, tabs, fields, primary and OAuth actions</td></tr>
+              <tr><td>Navigation</td><td>Sidebar</td><td>Menu / future drawer</td><td>Persistent desktop panel, modal mobile drawer, account preferences</td></tr>
+              <tr><td>Feedback</td><td>Toast + sync badge</td><td>Alert + future toast</td><td>Calm, short, recoverable messages</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="states">
+        <div class="section-head">
+          <div><div class="eyebrow">12</div><h3>Loading, Empty, Offline + Error</h3></div>
+          <p>Every data-driven surface needs explicit non-happy states.</p>
+        </div>
+        <div class="grid">
+          <div class="state-stack">
+            <div class="state-row"><i data-lucide="loader-circle"></i> Loading your lists…</div>
+            <div class="state-row"><i data-lucide="inbox"></i> No tasks here yet. Add one when it matters.</div>
+          </div>
+          <div class="state-stack">
+            <div class="state-row"><i data-lucide="cloud-off"></i> Offline — changes will sync when connected.</div>
+            <div class="state-row error"><i data-lucide="triangle-alert"></i> Couldn’t sync. Your local changes are safe.</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="guidelines">
         <div class="section-head">
           <div>
-            <div class="eyebrow">10</div>
-            <h3>Claude Design Brief</h3>
+            <div class="eyebrow">14</div>
+            <h3>Usage Guidelines</h3>
           </div>
           <p>A concise handoff brief for improving the design while preserving product identity.</p>
         </div>
@@ -969,6 +1129,18 @@
 
   <script>
     if (window.lucide) lucide.createIcons();
+    function renderTokenValues() {
+      const styles = getComputedStyle(document.body);
+      document.querySelectorAll('[data-css-token]').forEach(element => {
+        element.textContent = styles.getPropertyValue(element.dataset.cssToken).trim();
+      });
+    }
+    renderTokenValues();
+    document.getElementById('themeSelect').addEventListener('change', event => {
+      if (event.target.value) document.body.dataset.theme = event.target.value;
+      else delete document.body.dataset.theme;
+      renderTokenValues();
+    });
   </script>
 </body>
 </html>

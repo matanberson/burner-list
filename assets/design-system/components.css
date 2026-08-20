@@ -1,0 +1,145 @@
+/* Production Burner List component primitives. Catalogs must import this file. */
+
+.ds-button {
+  appearance: none;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 8px 14px;
+  font: 500 13px Inter, sans-serif;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: opacity 0.15s, color 0.15s, background-color 0.15s, border-color 0.15s;
+}
+
+.ds-button--primary { background: var(--text-mid); color: var(--paper); }
+.ds-button--primary:hover { opacity: 0.88; }
+.ds-button--secondary { background: transparent; border-color: var(--border-strong); color: var(--text-mid); }
+.ds-button--secondary:hover { background: var(--hover-tint); color: var(--text-dark); }
+.ds-button--ghost { min-height: auto; padding: 6px 4px; background: transparent; color: var(--text-faint); }
+.ds-button--ghost:hover { color: var(--text-mid); }
+.ds-button--icon { width: 32px; min-height: 32px; padding: 0; background: transparent; color: var(--text-faint); }
+.ds-button--icon:hover { color: var(--text-mid); background: var(--hover-tint); }
+.ds-button--compact-icon { width: var(--space-6); height: var(--space-6); min-height: var(--space-6); }
+.ds-button--compact-icon .lucide { width: var(--space-6); height: var(--space-6); }
+.ds-button:disabled, .ds-button[aria-disabled="true"] { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+
+.ds-field {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0 var(--space-3);
+  background: var(--field-surface);
+  color: var(--text-dark);
+  font: 400 14px Inter, sans-serif;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+textarea.ds-field { min-height: 82px; padding-block: 10px; resize: vertical; }
+.ds-field::placeholder { color: var(--text-faint); }
+.ds-field:focus { border-color: var(--text-faint); box-shadow: 0 0 0 2px var(--hover-tint-strong); }
+.ds-field[aria-invalid="true"] { border-color: var(--danger); }
+.ds-field:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.ds-checkbox {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  border: 1.5px solid var(--text-faint);
+  border-radius: 50%;
+  background: transparent;
+  position: relative;
+  cursor: pointer;
+}
+
+.ds-checkbox:checked { background: var(--text-soft); border-color: var(--text-soft); }
+.ds-checkbox:checked::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 5px;
+  height: 8px;
+  border: 2px solid var(--paper);
+  border-top: 0;
+  border-left: 0;
+  transform: rotate(45deg);
+}
+.ds-checkbox:focus-visible { outline: 2px solid var(--text-faint); outline-offset: 2px; }
+.ds-checkbox:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.ds-zone-label {
+  color: var(--text-faint);
+  font: 400 12px/1.2 Inter, sans-serif;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.ds-project-name {
+  display: block;
+  width: 100%;
+  margin-bottom: var(--space-4);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-dark);
+  font: 600 24px/1.2 Inter, sans-serif;
+  outline: none;
+  overflow: hidden;
+  resize: none;
+  field-sizing: content;
+}
+
+.ds-project-name::placeholder { color: var(--text-faint); font-weight: 400; }
+.ds-project-name:focus-visible { box-shadow: 0 2px 0 var(--border-strong); }
+
+.ds-date-lockup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--text-faint);
+  text-align: center;
+}
+
+.ds-date-heading {
+  color: var(--text-faint);
+  font: 400 18px/1.2 Inter, sans-serif;
+}
+
+.ds-date-lockup.is-today .ds-date-heading,
+.ds-date-lockup.is-view-title .ds-date-heading {
+  color: var(--text-dark);
+  font-weight: 600;
+}
+
+.ds-date-subtitle {
+  margin-top: 2px;
+  color: var(--text-faint);
+  font: 400 12px/1.2 Inter, sans-serif;
+}
+
+.ds-date-subtitle:empty { display: none; }
+
+.ds-setting-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) 0;
+  color: var(--text-dark);
+  cursor: pointer;
+}
+
+.ds-setting-row + .ds-setting-row { border-top: 1px solid var(--border); }
+.ds-setting-copy { min-width: 0; }
+.ds-setting-title { display: block; font-size: 13px; font-weight: 500; }
+.ds-setting-description { display: block; margin-top: var(--space-1); color: var(--text-soft); font-size: 11px; line-height: 1.4; }
+.ds-setting-row .ds-checkbox { margin-top: 2px; }
